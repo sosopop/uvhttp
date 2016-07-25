@@ -1,0 +1,6 @@
+[submodule "src/mbedtls"]
+	path = src/mbedtls
+	url = https://github.com/ARMmbed/mbedtls.git
+[submodule "src/libuv"]
+	path = src/libuv
+	url = https://github.com/libuv/libuv.git
