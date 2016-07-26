@@ -2,12 +2,19 @@
 Microsoft Visual Studio Solution File, Format Version 11.00
 # Visual Studio 2010
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "uvhttp", "uvhttp.vcxproj", "{C76B146A-981E-45C4-B530-C9EE7C37C3C6}"
+	ProjectSection(ProjectDependencies) = postProject
+		{5284E913-6E16-401A-A189-9C9FFCDE1ABD} = {5284E913-6E16-401A-A189-9C9FFCDE1ABD}
+		{6464DECC-588C-4B4A-8377-1C02D69CAA39} = {6464DECC-588C-4B4A-8377-1C02D69CAA39}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libuv", "libuv.vcxproj", "{5284E913-6E16-401A-A189-9C9FFCDE1ABD}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mbedtls", "mbedtls.vcxproj", "{6464DECC-588C-4B4A-8377-1C02D69CAA39}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "test", "test.vcxproj", "{3E53B8D1-7C82-461E-8715-7A61E0162DF8}"
+	ProjectSection(ProjectDependencies) = postProject
+		{C76B146A-981E-45C4-B530-C9EE7C37C3C6} = {C76B146A-981E-45C4-B530-C9EE7C37C3C6}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

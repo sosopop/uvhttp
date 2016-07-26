@@ -20,6 +20,14 @@
     <ClInclude Include="..\..\src\uvhttp\uvhttp_internal.h" />
     <ClInclude Include="..\..\src\uvhttp\uvhttp.h" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="libuv.vcxproj">
+      <Project>{5284e913-6e16-401a-a189-9c9ffcde1abd}</Project>
+    </ProjectReference>
+    <ProjectReference Include="mbedtls.vcxproj">
+      <Project>{6464decc-588c-4b4a-8377-1c02d69caa39}</Project>
+    </ProjectReference>
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{C76B146A-981E-45C4-B530-C9EE7C37C3C6}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>

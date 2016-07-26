@@ -84,6 +84,11 @@
   <ItemGroup>
     <ClInclude Include="..\..\src\test\unittest.h" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="uvhttp.vcxproj">
+      <Project>{c76b146a-981e-45c4-b530-c9ee7c37c3c6}</Project>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
