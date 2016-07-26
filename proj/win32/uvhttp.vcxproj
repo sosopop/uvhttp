@@ -11,10 +11,12 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\src\uvhttp\util.c" />
     <ClCompile Include="..\..\src\uvhttp\uvhttp_internal.c" />
     <ClCompile Include="..\..\src\uvhttp\uvhttp.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\src\uvhttp\util.h" />
     <ClInclude Include="..\..\src\uvhttp\uvhttp_internal.h" />
     <ClInclude Include="..\..\src\uvhttp\uvhttp.h" />
   </ItemGroup>
