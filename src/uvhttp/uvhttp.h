@@ -10,12 +10,12 @@ typedef void* uvhttp_obj;
 
 typedef enum {
     UVHTTP_SRV_OPT_USER_DATA,
-    UVHTTP_SRV_OPT_REQ_CB,
+    UVHTTP_SRV_OPT_REQUEST_CB,
     UVHTTP_SRV_OPT_END_CB,
-    UVHTTP_SESSION_OPT_USER_DATA,
-    UVHTTP_SESSION_OPT_READ_CB,
+    UVHTTP_SRV_SESSION_OPT_USER_DATA,
+    UVHTTP_SRV_SESSION_OPT_READ_CB,
     //每次请求必然有end，根据status判断是错误，还是成功，可以end的时候释放用户内存
-    UVHTTP_SESSION_OPT_END_CB,
+    UVHTTP_SRV_SESSION_OPT_END_CB,
     UVHTTP_CLT_OPT_USER_DATA,
     UVHTTP_CLT_OPT_RESPONSE_CB,
     UVHTTP_CLT_OPT_READ_CB,
@@ -26,11 +26,11 @@ typedef enum {
 
 typedef enum {
     UVHTTP_SRV_INFO_USER_DATA,
+    UVHTTP_SRV_INFO_UVTCP,
+    UVHTTP_SRV_INFO_UVLOOP,
     UVHTTP_SESSION_INFO_USER_DATA,
-    UVHTTP_SRV_INFO_TCP,
-    UVHTTP_SESSION_INFO_TCP,
-    UVHTTP_SRV_INFO_LOOP,
-    UVHTTP_SESSION_INFO_LOOP,
+    UVHTTP_SESSION_INFO_UVTCP,
+    UVHTTP_SESSION_INFO_UVLOOP,
     UVHTTP_SESSION_INFO_SRV
 } uvhttp_info_type;
 
@@ -52,7 +52,6 @@ struct uvhttp_response {
     uv_buf_t resp_status;
     struct uvhttp_header* headers;
 };
-
 
 #if defined(__cplusplus)
 }
