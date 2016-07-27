@@ -1,5 +1,5 @@
-#ifndef util_h__
-#define util_h__
+#ifndef UVHTTP_UTIL_H__
+#define UVHTTP_UTIL_H__
 
 #if defined(__cplusplus)
 extern "C" {
@@ -29,4 +29,4 @@ void uv_buf_ex_trim(struct uv_buf_ex *);
 }
 #endif /* __cplusplus */
 
-#endif // util_h__
+#endif // UVHTTP_UTIL_H__

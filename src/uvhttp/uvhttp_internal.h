@@ -1,5 +1,10 @@
-#ifndef uvhttp_internal_h__
-#define uvhttp_internal_h__
+#ifndef UVHTTP_INTERNAL_H__
+#define UVHTTP_INTERNAL_H__
+#if defined(__cplusplus)
+extern "C" {
+#endif
 
-
-#endif // uvhttp-internal_h__
+#if defined(__cplusplus)
+}
+#endif /* __cplusplus */
+#endif // UVHTTP_INTERNAL_H__

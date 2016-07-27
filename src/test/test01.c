@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include "unittest.h"
+#include "uvhttp.h"
 
 void do_test01(){
     TEST_EQ(0==0);
