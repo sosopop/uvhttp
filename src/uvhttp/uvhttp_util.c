@@ -10,7 +10,7 @@
 #define UVBUF_FREE free
 #endif
 
-void uvhttp_buf_init(struct uvhttp_buf *buf, size_t initial_size) {
+void uvhttp_buf_init(struct uvhttp_buf *buf, unsigned int initial_size) {
   buf->len = buf->size = 0;
   buf->base = NULL;
   uvhttp_buf_resize(buf, initial_size);
@@ -23,7 +23,7 @@ void uvhttp_buf_free(struct uvhttp_buf *buf) {
   }
 }
 
-void uvhttp_buf_resize(struct uvhttp_buf *a, size_t new_size) {
+void uvhttp_buf_resize(struct uvhttp_buf *a, unsigned int new_size) {
   if (new_size > a->size || (new_size < a->size && new_size >= a->len)) {
     char *buf = (char *) UVBUF_REALLOC(a->base, new_size);
     /*
@@ -41,7 +41,7 @@ void uvhttp_buf_trim(struct uvhttp_buf *buf) {
   uvhttp_buf_resize(buf, buf->len);
 }
 
-size_t uvhttp_buf_insert(struct uvhttp_buf *a, size_t off, const void *buf, size_t len) {
+unsigned int uvhttp_buf_insert(struct uvhttp_buf *a, unsigned int off, const void *buf, unsigned int len) {
   char *p = NULL;
 
   assert(a != NULL);
@@ -49,7 +49,7 @@ size_t uvhttp_buf_insert(struct uvhttp_buf *a, size_t off, const void *buf, size
   assert(off <= a->len);
 
   /* check overflow */
-  if (~(size_t) 0 - (size_t) a->base < len) return 0;
+  if (~(unsigned int) 0 - (unsigned int) a->base < len) return 0;
 
   if (a->len + len <= a->size) {
     memmove(a->base + off + len, a->base + off, a->len - off);
@@ -73,11 +73,11 @@ size_t uvhttp_buf_insert(struct uvhttp_buf *a, size_t off, const void *buf, size
   return len;
 }
 
-size_t uvhttp_buf_append(struct uvhttp_buf *a, const void *buf, size_t len) {
+unsigned int uvhttp_buf_append(struct uvhttp_buf *a, const void *buf, unsigned int len) {
   return uvhttp_buf_insert(a, a->len, buf, len);
 }
 
-void uvhttp_buf_remove(struct uvhttp_buf *mb, size_t n) {
+void uvhttp_buf_remove(struct uvhttp_buf *mb, unsigned int n) {
   if (n > 0 && n <= mb->len) {
     memmove(mb->base, mb->base + n, mb->len - n);
     mb->len -= n;

@@ -24,16 +24,16 @@ struct uvhttp_str {
 /* Memory buffer descriptor */
 struct uvhttp_buf {
   char *base;   /* Buffer pointer */
-  size_t len;  /* Data length. Data is located between offset 0 and len. */
-  size_t size; /* Buffer size allocated by realloc(1). Must be >= len */
+  unsigned int len;  /* Data length. Data is located between offset 0 and len. */
+  unsigned int size; /* Buffer size allocated by realloc(1). Must be >= len */
 };
 
-void uvhttp_buf_init(struct uvhttp_buf *, size_t initial_capacity);
+void uvhttp_buf_init(struct uvhttp_buf *, unsigned int initial_capacity);
 void uvhttp_buf_free(struct uvhttp_buf *);
-size_t uvhttp_buf_append(struct uvhttp_buf *, const void *data, size_t data_size);
-size_t uvhttp_buf_insert(struct uvhttp_buf *, size_t, const void *, size_t);
-void uvhttp_buf_remove(struct uvhttp_buf *, size_t data_size);
-void uvhttp_buf_resize(struct uvhttp_buf *, size_t new_size);
+unsigned int uvhttp_buf_append(struct uvhttp_buf *, const void *data, unsigned int data_size);
+unsigned int uvhttp_buf_insert(struct uvhttp_buf *, unsigned int, const void *, unsigned int);
+void uvhttp_buf_remove(struct uvhttp_buf *, unsigned int data_size);
+void uvhttp_buf_resize(struct uvhttp_buf *, unsigned int new_size);
 void uvhttp_buf_trim(struct uvhttp_buf *);
 
 struct uvhttp_slist {
