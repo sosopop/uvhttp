@@ -11,14 +11,15 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\src\uvhttp\util.c" />
-    <ClCompile Include="..\..\src\uvhttp\uvhttp_internal.c" />
+    <ClCompile Include="..\..\src\uvhttp\http_parser.c" />
     <ClCompile Include="..\..\src\uvhttp\uvhttp.c" />
+    <ClCompile Include="..\..\src\uvhttp\uvhttp_util.c" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\src\uvhttp\util.h" />
+    <ClInclude Include="..\..\src\uvhttp\http_parser.h" />
     <ClInclude Include="..\..\src\uvhttp\uvhttp_internal.h" />
     <ClInclude Include="..\..\src\uvhttp\uvhttp.h" />
+    <ClInclude Include="..\..\src\uvhttp\uvhttp_util.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="libuv.vcxproj">
@@ -62,9 +63,10 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <CompileAs>CompileAsC</CompileAs>
+      <AdditionalIncludeDirectories>../../src/libuv/include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -79,9 +81,10 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <CompileAs>CompileAsC</CompileAs>
+      <AdditionalIncludeDirectories>../../src/libuv/include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
