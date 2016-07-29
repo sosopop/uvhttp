@@ -20,7 +20,7 @@ int uvhttp_obj_setopt(
         break;
     case UVHTTP_SRV_SESSION_OPT_USER_DATA:
         break;
-    case UVHTTP_SRV_SESSION_OPT_READ_CB:
+    case UVHTTP_SRV_SESSION_OPT_BODY_READ_CB:
         break;
     case UVHTTP_SRV_SESSION_OPT_END_CB:
         break;
@@ -28,9 +28,9 @@ int uvhttp_obj_setopt(
         break;
     case UVHTTP_CLT_OPT_RESPONSE_CB:
         break;
-    case UVHTTP_CLT_OPT_READ_CB:
+    case UVHTTP_CLT_OPT_BODY_READ_CB:
         break;
-    case UVHTTP_CLT_OPT_WRITE_CB:
+    case UVHTTP_CLT_OPT_BODY_WRITE_CB:
         break;
     case UVHTTP_CLT_OPT_END_CB:
         break;

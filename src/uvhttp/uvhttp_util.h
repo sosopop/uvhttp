@@ -28,7 +28,10 @@ struct uvhttp_buf {
   unsigned int size; /* Buffer size allocated by realloc(1). Must be >= len */
 };
 
-void uvhttp_buf_init(struct uvhttp_buf *, unsigned int initial_capacity);
+void uvhttp_buf_init(
+    struct uvhttp_buf *, 
+    unsigned int initial_capacity
+    );
 void uvhttp_buf_free(struct uvhttp_buf *);
 unsigned int uvhttp_buf_append(struct uvhttp_buf *, const void *data, unsigned int data_size);
 unsigned int uvhttp_buf_insert(struct uvhttp_buf *, unsigned int, const void *, unsigned int);

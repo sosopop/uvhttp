@@ -10,6 +10,19 @@ extern "C" {
 #endif
 #define MAX_DATA_BUFFER 4*1024
 
+struct uvhttp_request{
+    struct uvhttp_str method;
+    struct uvhttp_str uri;
+    struct uvhttp_str proto;
+    struct uvhttp_slist* headers;
+};
+
+struct uvhttp_response {
+    int resp_code;
+    struct uvhttp_str resp_status;
+    struct uvhttp_slist* headers;
+};
+
 //http server object
 struct uvhttp_srv_obj {
     void* user_data;
