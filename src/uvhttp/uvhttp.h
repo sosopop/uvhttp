@@ -35,21 +35,24 @@ typedef enum {
     UVHTTP_SRV_SESSION_INFO_UVTCP,
     UVHTTP_SRV_SESSION_INFO_LOOP,
     UVHTTP_SRV_SESSION_INFO_SRV,
-    UVHTTP_SRV_SESSION_INFO_REQUEST_METHOD,
-    UVHTTP_SRV_SESSION_INFO_REQUEST_URI,
-    UVHTTP_SRV_SESSION_INFO_REQUEST_PROTO,
-    UVHTTP_SRV_SESSION_INFO_REQUEST_HEADERS,
     UVHTTP_CLT_INFO_USER_DATA,
     UVHTTP_CLT_INFO_UVTCP,
-    UVHTTP_CLT_INFO_LOOP,
-    UVHTTP_CLT_INFO_RESPONSE_CODE,
-    UVHTTP_CLT_INFO_RESPONSE_STATUS,
-    UVHTTP_CLT_INFO_RESPONSE_HEADERS
+    UVHTTP_CLT_INFO_LOOP
 } uvhttp_info_type;
+
+struct uvhttp_message{
+    int resp_code;
+    struct uvhttp_str resp_status;
+    struct uvhttp_str method;
+    struct uvhttp_str uri;
+    struct uvhttp_str proto;
+    struct uvhttp_slist* headers;
+    struct uvhttp_str body;
+};
 
 typedef void (*uvhttp_request_cb)(
     uvhttp_obj obj,
-    struct uvhttp_request* req
+    struct uvhttp_message* req
     );
 
 typedef void (*uvhttp_body_read_cb)(
@@ -73,7 +76,7 @@ typedef void (*uvhttp_write_cb)(
 
 typedef void (*uvhttp_response_cb)(
     uvhttp_obj obj,
-    struct uvhttp_response* resp
+    struct uvhttp_message* resp
     );
 
 int uvhttp_obj_setopt( 
@@ -128,7 +131,8 @@ uvhttp_obj uvhttp_clt_new(
     );
 
 struct uvhttp_slist* uvhttp_slist_append(
-    struct uvhttp_slist* list, const char* string
+    struct uvhttp_slist* list, 
+    const char* string
     );
 
 void uvhttp_slist_free_all( 
