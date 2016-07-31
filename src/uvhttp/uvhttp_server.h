@@ -36,7 +36,7 @@ typedef enum {
     UVHTTP_SESSION_INFO_SRV
 } uvhttp_session_info;
 
-typedef void (*uvhttp_session_request_callback)(
+typedef void (*uvhttp_server_request_callback)(
     uvhttp_session session,
     struct uvhttp_message* request
     );

@@ -12,24 +12,12 @@
 extern "C" {
 #endif
 
-struct uvhttp_server_obj {
+struct  uvhttp_client_obj {
     void* user_data;
     uv_loop_t* loop;
     uv_tcp_t* tcp;
-    uvhttp_server_request_callback request_callback;
-    uvhttp_server_end_callback end_callback;
-    unsigned char deleted:1;
-} ;
 
-struct  uvhttp_session_obj {
-    void* user_data;
-    uv_loop_t* loop;
-    uv_tcp_t* tcp;
-    uvhttp_session_body_read_callback read_callback;
-    uvhttp_session_end_callback end_callback;
-    struct uvhttp_srv_obj* server;
-
-    struct uvhttp_message request;
+    struct uvhttp_message response;
     http_parser parser;
     unsigned char header_complete:1;
     struct uvhttp_buffer result_buffer;

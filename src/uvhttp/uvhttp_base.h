@@ -11,15 +11,16 @@ typedef void* uvhttp_loop;
 typedef enum {
     UVHTTP_ERROR_OK,
     UVHTTP_ERROR_FAILED
-};
+} uvhttp_error_code;
 
 struct uvhttp_message{
     int resp_code;
+    long long content_length;
     struct uvhttp_chunk resp_status;
     struct uvhttp_chunk method;
     struct uvhttp_chunk uri;
     struct uvhttp_chunk proto;
-    struct uvhttp_pair_list* headers;
+    struct uvhttp_list* headers;
     struct uvhttp_chunk body;
 };
 
