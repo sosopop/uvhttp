@@ -32,8 +32,8 @@ struct  uvhttp_session_obj {
     struct uvhttp_message request;
     http_parser parser;
     unsigned char header_complete:1;
-    struct uvhttp_buffer result_buffer;
-    unsigned char net_buffer[UVHTTP_MAX_DATA_BUFFER_SIZE];
+    struct uvhttp_buffer net_buffer_in;
+    struct uvhttp_buffer net_buffer_out;
 };
 
 #if defined(__cplusplus)

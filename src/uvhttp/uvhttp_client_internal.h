@@ -25,8 +25,8 @@ struct  uvhttp_client_obj {
 
     struct uvhttp_message response;
     http_parser parser;
-    struct uvhttp_buffer response_buffer;
-    unsigned char net_buffer[UVHTTP_MAX_DATA_BUFFER_SIZE];
+    struct uvhttp_buffer net_buffer_in;
+    struct uvhttp_buffer net_buffer_out;
 
     unsigned char header_complete:1;
     unsigned char deleted:1;
