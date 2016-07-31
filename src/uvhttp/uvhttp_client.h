@@ -41,6 +41,15 @@ typedef void (*uvhttp_client_response_callback)(
     struct uvhttp_message* resp
     );
 
+typedef void (*uvhttp_client_end_callback)(
+    int status,
+    uvhttp_client client
+    );
+
+typedef void (*uvhttp_client_body_read_callback)(
+    uvhttp_client client
+    );
+
 uvhttp_client uvhttp_client_new(
     uvhttp_loop loop
     );
