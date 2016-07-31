@@ -27,7 +27,7 @@ struct  uvhttp_session_obj {
     uv_tcp_t* tcp;
     uvhttp_session_body_read_callback read_callback;
     uvhttp_session_end_callback end_callback;
-    struct uvhttp_srv_obj* server;
+    struct uvhttp_server_obj* server;
 
     struct uvhttp_message request;
     http_parser parser;
