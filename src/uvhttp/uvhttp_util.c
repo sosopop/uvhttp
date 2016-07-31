@@ -2,185 +2,159 @@
 #include <assert.h>
 #include <string.h>
 
-#ifndef UVBUF_REALLOC
-#define UVBUF_REALLOC realloc
-#endif
-
-#ifndef UVBUF_FREE
-#define UVBUF_FREE free
-#endif
-
-void uvhttp_buf_init(struct uvhttp_buf *buf, unsigned int initial_size) {
-  buf->len = buf->size = 0;
-  buf->base = NULL;
-  uvhttp_buf_resize(buf, initial_size);
+void uvhttp_buffer_init(
+    struct uvhttp_buffer *buf,
+    unsigned int initial_size
+    )
+{
+    buf->len = buf->size = 0;
+    buf->base = NULL;
+    uvhttp_buf_resize(buf, initial_size);
 }
 
-void uvhttp_buf_free(struct uvhttp_buf *buf) {
-  if (buf->base != NULL) {
-    UVBUF_FREE(buf->base);
-    uvhttp_buf_init(buf, 0);
-  }
-}
-
-void uvhttp_buf_resize(struct uvhttp_buf *a, unsigned int new_size) {
-  if (new_size > a->size || (new_size < a->size && new_size >= a->len)) {
-    char *buf = (char *) UVBUF_REALLOC(a->base, new_size);
-    /*
-     * In case realloc fails, there's not much we can do, except keep things as
-     * they are. Note that NULL is a valid return value from realloc when
-     * size == 0, but that is covered too.
-     */
-    if (buf == NULL && new_size != 0) return;
-    a->base = buf;
-    a->size = new_size;
-  }
-}
-
-void uvhttp_buf_trim(struct uvhttp_buf *buf) {
-  uvhttp_buf_resize(buf, buf->len);
-}
-
-unsigned int uvhttp_buf_insert(struct uvhttp_buf *a, unsigned int off, const void *buf, unsigned int len) {
-  char *p = NULL;
-
-  assert(a != NULL);
-  assert(a->len <= a->size);
-  assert(off <= a->len);
-
-  /* check overflow */
-  if (~(unsigned int) 0 - (unsigned int) a->base < len) return 0;
-
-  if (a->len + len <= a->size) {
-    memmove(a->base + off + len, a->base + off, a->len - off);
-    if (buf != NULL) {
-      memcpy(a->base + off, buf, len);
+void uvhttp_buffer_free(
+    struct uvhttp_buffer *buf
+    )
+{
+    if (buf->base != NULL) {
+        free(buf->base);
+        uvhttp_buffer_init(buf, 0);
     }
-    a->len += len;
-  } else if ((p = (char *) UVBUF_REALLOC(
-                  a->base, (a->len + len) * UVBUF_SIZE_MULTIPLIER)) != NULL) {
-    a->base = p;
-    memmove(a->base + off + len, a->base + off, a->len - off);
-    if (buf != NULL) {
-      memcpy(a->base + off, buf, len);
+}
+
+void uvhttp_buf_resize(
+    struct uvhttp_buffer *a,
+    unsigned int new_size)
+{
+    if (new_size > a->size || (new_size < a->size && new_size >= a->len)) {
+        char *buf = (char *) realloc(a->base, new_size);
+        /*
+        * In case realloc fails, there's not much we can do, except keep things as
+        * they are. Note that NULL is a valid return value from realloc when
+        * size == 0, but that is covered too.
+        */
+        if (buf == NULL && new_size != 0) return;
+        a->base = buf;
+        a->size = new_size;
     }
-    a->len += len;
-    a->size = a->len * UVBUF_SIZE_MULTIPLIER;
-  } else {
-    len = 0;
-  }
-
-  return len;
 }
 
-unsigned int uvhttp_buf_append(struct uvhttp_buf *a, const void *buf, unsigned int len) {
-  return uvhttp_buf_insert(a, a->len, buf, len);
-}
-
-void uvhttp_buf_remove(struct uvhttp_buf *mb, unsigned int n) {
-  if (n > 0 && n <= mb->len) {
-    memmove(mb->base, mb->base + n, mb->len - n);
-    mb->len -= n;
-  }
-}
-
-static struct uvhttp_slist *slist_get_last(struct uvhttp_slist *list)
+void uvhttp_buf_trim(
+    struct uvhttp_buffer *buf
+    )
 {
-  struct uvhttp_slist     *item;
-
-  /* if caller passed us a NULL, return now */
-  if(!list)
-    return NULL;
-
-  /* loop through to find the last item */
-  item = list;
-  while(item->next) {
-    item = item->next;
-  }
-  return item;
+    uvhttp_buf_resize(buf, buf->len);
 }
 
-struct uvhttp_slist *uvhttp_slist_append_nodup(struct uvhttp_slist *list, char *data)
+unsigned int uvhttp_buf_insert(
+    struct uvhttp_buffer *a, 
+    unsigned int off, 
+    const void *buf, 
+    unsigned int len)
 {
-  struct uvhttp_slist     *last;
-  struct uvhttp_slist     *new_item;
+    char *p = NULL;
 
-  new_item = (struct uvhttp_slist*)malloc(sizeof(struct uvhttp_slist));
-  if(!new_item)
-    return NULL;
+    assert(a != NULL);
+    assert(a->len <= a->size);
+    assert(off <= a->len);
 
-  new_item->next = NULL;
-  new_item->data = data;
+    /* check overflow */
+    if (~(unsigned int) 0 - (unsigned int) a->base < len) return 0;
 
-  /* if this is the first item, then new_item *is* the list */
-  if(!list)
-    return new_item;
-
-  last = slist_get_last(list);
-  last->next = new_item;
-  return list;
-}
-
-/*
- * uvhttp_slist_append() appends a string to the linked list. It always returns
- * the address of the first record, so that you can use this function as an
- * initialization function as well as an append function. If you find this
- * bothersome, then simply create a separate _init function and call it
- * appropriately from within the program.
- */
-struct uvhttp_slist *uvhttp_slist_append(struct uvhttp_slist *list,
-                                     const char *data)
-{
-  char *dupdata = strdup(data);
-
-  if(!dupdata)
-    return NULL;
-
-  list = uvhttp_slist_append_nodup(list, dupdata);
-  if(!list)
-    free(dupdata);
-
-  return list;
-}
-
-/*
- * uvhttp_slist_duplicate() duplicates a linked list. It always returns the
- * address of the first record of the cloned list or NULL in case of an
- * error (or if the input list was NULL).
- */
-struct uvhttp_slist *uvhttp_slist_duplicate(struct uvhttp_slist *inlist)
-{
-  struct uvhttp_slist *outlist = NULL;
-  struct uvhttp_slist *tmp;
-
-  while(inlist) {
-    tmp = uvhttp_slist_append(outlist, inlist->data);
-
-    if(!tmp) {
-      uvhttp_slist_free_all(outlist);
-      return NULL;
+    if (a->len + len <= a->size) {
+        memmove(a->base + off + len, a->base + off, a->len - off);
+        if (buf != NULL) {
+            memcpy(a->base + off, buf, len);
+        }
+        a->len += len;
+    } else if ((p = (char *) realloc(
+        a->base, (a->len + len) * UVBUF_SIZE_MULTIPLIER)) != NULL) {
+            a->base = p;
+            memmove(a->base + off + len, a->base + off, a->len - off);
+            if (buf != NULL) {
+                memcpy(a->base + off, buf, len);
+            }
+            a->len += len;
+            a->size = a->len * UVBUF_SIZE_MULTIPLIER;
+    } else {
+        len = 0;
     }
 
-    outlist = tmp;
-    inlist = inlist->next;
-  }
-  return outlist;
+    return len;
 }
 
-/* be nice and clean up resources */
-void uvhttp_slist_free_all(struct uvhttp_slist *list)
+unsigned int uvhttp_buf_append(
+    struct uvhttp_buffer *a, 
+    const void *buf, 
+    unsigned int len) 
 {
-  struct uvhttp_slist     *next;
-  struct uvhttp_slist     *item;
+    return uvhttp_buf_insert(a, a->len, buf, len);
+}
 
-  if(!list)
-    return;
+void uvhttp_buf_remove(struct uvhttp_buffer *mb, unsigned int n) {
+    if (n > 0 && n <= mb->len) {
+        memmove(mb->base, mb->base + n, mb->len - n);
+        mb->len -= n;
+    }
+}
 
-  item = list;
-  do {
-    next = item->next;
-    UVHTTP_SAFE_FREE(item->data);
-    free(item);
-    item = next;
-  } while(next);
+struct uvhttp_list* uvhttp_list_append( 
+    struct uvhttp_list* list,
+    void* data
+    )
+{
+    int len = 0;
+    struct uvhttp_list* first = 0;
+    if ( list == 0) {
+        list = (struct uvhttp_list*)malloc( sizeof(struct uvhttp_list));
+        list->data = data;
+        list->next = (struct uvhttp_list*)malloc( sizeof(struct uvhttp_list));
+        list->next->data = (void*)1;
+        list->next->next = list;
+        return list->next;
+    }
+    first = list->next;
+    list->next =  (struct uvhttp_list*)malloc( sizeof(struct uvhttp_list));
+    len = (int)list->data;
+    list->next->data = (void*)(++len);
+    list->next->next = first;
+    list->data = data;
+
+    return list->next;
+}
+
+struct uvhttp_list* uvhttp_list_begin( 
+    struct uvhttp_list* list
+    )
+{
+    return list->next;
+}
+
+struct uvhttp_list* uvhttp_list_end( 
+    struct uvhttp_list* list
+    )
+{
+    return list;
+}
+
+void uvhttp_list_free(
+    struct uvhttp_list* list
+    )
+{
+    struct uvhttp_list* begin = list;
+    struct uvhttp_list* cur = begin;
+    struct uvhttp_list* next = begin;
+    do 
+    {
+        next = next->next;
+        free( cur);
+        cur = next;
+    } while ( begin != cur);
+}
+
+int uvhttp_list_size(
+    struct uvhttp_list* list
+    )
+{
+    return (int)list->data;
 }
