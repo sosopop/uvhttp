@@ -5,7 +5,7 @@
 extern "C" {
 #endif
 
-#define UVHTTP_MAX_DATA_BUFFER_SIZE 4*1024
+#define  UVHTTP_NET_BUFFER_SIZE 4*1024
 
 #if defined(__cplusplus)
 }

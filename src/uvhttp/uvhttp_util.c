@@ -24,7 +24,8 @@ void uvhttp_buffer_free(
 
 void uvhttp_buf_resize(
     struct uvhttp_buffer *a,
-    unsigned int new_size)
+    unsigned int new_size
+    )
 {
     if (new_size > a->size || (new_size < a->size && new_size >= a->len)) {
         char *buf = (char *) realloc(a->base, new_size);
@@ -50,7 +51,8 @@ unsigned int uvhttp_buf_insert(
     struct uvhttp_buffer *a, 
     unsigned int off, 
     const void *buf, 
-    unsigned int len)
+    unsigned int len
+    )
 {
     char *p = NULL;
 
@@ -86,12 +88,17 @@ unsigned int uvhttp_buf_insert(
 unsigned int uvhttp_buf_append(
     struct uvhttp_buffer *a, 
     const void *buf, 
-    unsigned int len) 
+    unsigned int len
+    ) 
 {
     return uvhttp_buf_insert(a, a->len, buf, len);
 }
 
-void uvhttp_buf_remove(struct uvhttp_buffer *mb, unsigned int n) {
+void uvhttp_buf_remove(
+    struct uvhttp_buffer *mb, 
+    unsigned int n
+    ) 
+{
     if (n > 0 && n <= mb->len) {
         memmove(mb->base, mb->base + n, mb->len - n);
         mb->len -= n;

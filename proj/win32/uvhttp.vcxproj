@@ -12,13 +12,20 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\uvhttp\http_parser.c" />
-    <ClCompile Include="..\..\src\uvhttp\uvhttp.c" />
+    <ClCompile Include="..\..\src\uvhttp\uvhttp_base.c" />
+    <ClCompile Include="..\..\src\uvhttp\uvhttp_client.c" />
+    <ClCompile Include="..\..\src\uvhttp\uvhttp_server.c" />
     <ClCompile Include="..\..\src\uvhttp\uvhttp_util.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\uvhttp\http_parser.h" />
+    <ClInclude Include="..\..\src\uvhttp\uvhttp_base.h" />
+    <ClInclude Include="..\..\src\uvhttp\uvhttp_client.h" />
+    <ClInclude Include="..\..\src\uvhttp\uvhttp_client_internal.h" />
     <ClInclude Include="..\..\src\uvhttp\uvhttp_internal.h" />
+    <ClInclude Include="..\..\src\uvhttp\uvhttp_server_internal.h" />
     <ClInclude Include="..\..\src\uvhttp\uvhttp.h" />
+    <ClInclude Include="..\..\src\uvhttp\uvhttp_server.h" />
     <ClInclude Include="..\..\src\uvhttp\uvhttp_util.h" />
   </ItemGroup>
   <ItemGroup>

@@ -6,12 +6,18 @@
 extern "C" {
 #endif
 
+#define UVHTTP_MAX_HEADERS_SIZE 40
 typedef void* uvhttp_loop;
 
 typedef enum {
     UVHTTP_ERROR_OK,
     UVHTTP_ERROR_FAILED
 } uvhttp_error_code;
+
+struct uvhttp_header {
+    struct uvhttp_chunk key;
+    struct uvhttp_chunk value;
+};
 
 struct uvhttp_message{
     int resp_code;
@@ -20,7 +26,7 @@ struct uvhttp_message{
     struct uvhttp_chunk method;
     struct uvhttp_chunk uri;
     struct uvhttp_chunk proto;
-    struct uvhttp_list* headers;
+    struct uvhttp_header headers[UVHTTP_MAX_HEADERS_SIZE];
     struct uvhttp_chunk body;
 };
 
