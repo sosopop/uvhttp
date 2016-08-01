@@ -104,10 +104,10 @@ void do_test01(){
         ".baidu.com\r\n\r\n",
         sizeof(".baidu.com\r\n\r\n")-1);*/
 
-    bstring  b = bfromcstr("123");
-    bcatcstr(b, "456");
-    bstring  a = bfromcstr("ABCDEF");
-    b->data;
+//     bstring  b = bfromcstr("123");
+//     bcatcstr(b, "456");
+//     bstring  a = bfromcstr("ABCDEF");
+//     b->data;
     TEST_EQ(0==0);
     TEST_EQ(1==1);
     //≤‚ ‘uvhttp_list
