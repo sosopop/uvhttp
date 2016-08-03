@@ -2,7 +2,6 @@
 #include "unittest.h"
 #include "uvhttp.h"
 #include "http_parser.h"
-#include "bstrlib.h"
 
 //static int http_parser_on_srv_message_begin(
 //    http_parser* parser
@@ -88,26 +87,6 @@
 //};
 
 void do_test01(){
-    /*http_parser parser;
-    http_parser_init(&parser, HTTP_REQUEST);
-
-    http_parser_execute(&parser,
-        &srv_parser_settings,
-        "GET / HTTP/1.1\r\nHo",
-        sizeof("GET / HTTP/1.1\r\nHo")-1);
-    http_parser_execute(&parser,
-        &srv_parser_settings,
-        "st:www",
-        sizeof("st:www")-1);
-    http_parser_execute(&parser,
-        &srv_parser_settings,
-        ".baidu.com\r\n\r\n",
-        sizeof(".baidu.com\r\n\r\n")-1);*/
-
-//     bstring  b = bfromcstr("123");
-//     bcatcstr(b, "456");
-//     bstring  a = bfromcstr("ABCDEF");
-//     b->data;
     TEST_EQ(0==0);
     TEST_EQ(1==1);
     //≤‚ ‘uvhttp_list
