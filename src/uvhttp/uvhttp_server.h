@@ -12,13 +12,15 @@ typedef void* uvhttp_session;
 
 typedef enum {
     UVHTTP_SRV_OPT_USER_DATA,
-    UVHTTP_SRV_OPT_REQUEST_CB,
+    UVHTTP_SRV_OPT_SESSION_BEGIN_CB,
     UVHTTP_SRV_OPT_END_CB
 } uvhttp_server_option;
 
 typedef enum {
     UVHTTP_SESSION_OPT_USER_DATA,
-    UVHTTP_SESSION_OPT_BODY_READ_CB,
+    UVHTTP_SESSION_OPT_REQUEST_CB,
+    UVHTTP_SESSION_OPT_REQUEST_BODY_CB,
+    UVHTTP_SESSION_OPT_REQUEST_END_CB,
     UVHTTP_SESSION_OPT_WRITE_CB,
     UVHTTP_SESSION_OPT_END_CB
 } uvhttp_session_option;
@@ -32,8 +34,7 @@ typedef enum {
 typedef enum {
     UVHTTP_SESSION_INFO_USER_DATA,
     UVHTTP_SESSION_INFO_UVTCP,
-    UVHTTP_SESSION_INFO_LOOP,
-    UVHTTP_SESSION_INFO_SRV
+    UVHTTP_SESSION_INFO_LOOP
 } uvhttp_session_info;
 
 typedef void (*uvhttp_server_request_callback)(

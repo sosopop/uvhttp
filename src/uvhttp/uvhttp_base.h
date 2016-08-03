@@ -15,19 +15,56 @@ typedef enum {
 } uvhttp_error_code;
 
 struct uvhttp_header {
-    struct uvhttp_chunk key;
-    struct uvhttp_chunk value;
+    const char* key;
+    const char* value;
+    struct uvhttp_header* next;
 };
 
-struct uvhttp_message{
-    int resp_code;
-    long long content_length;
-    struct uvhttp_chunk resp_status;
-    struct uvhttp_chunk method;
-    struct uvhttp_chunk uri;
-    struct uvhttp_chunk proto;
-    struct uvhttp_header headers[UVHTTP_MAX_HEADERS_SIZE];
-    struct uvhttp_chunk body;
+typedef enum {
+    UVHTTP_METHOD_DELETE,
+    UVHTTP_METHOD_GET,
+    UVHTTP_METHOD_HEAD,
+    UVHTTP_METHOD_POST,
+    UVHTTP_METHOD_PUT,
+    UVHTTP_METHOD_CONNECT,
+    UVHTTP_METHOD_OPTIONS,
+    UVHTTP_METHOD_TRACE,
+    UVHTTP_METHOD_COPY,
+    UVHTTP_METHOD_LOCK,
+    UVHTTP_METHOD_MKCOL,
+    UVHTTP_METHOD_MOVE,
+    UVHTTP_METHOD_PROPFIND,
+    UVHTTP_METHOD_PROPPATCH,
+    UVHTTP_METHOD_SEARCH,
+    UVHTTP_METHOD_UNLOCK,
+    UVHTTP_METHOD_BIND,
+    UVHTTP_METHOD_REBIND,
+    UVHTTP_METHOD_UNBIND,
+    UVHTTP_METHOD_ACL,
+    UVHTTP_METHOD_REPORT,
+    UVHTTP_METHOD_MKACTIVITY,
+    UVHTTP_METHOD_CHECKOUT,
+    UVHTTP_METHOD_MERGE,
+    UVHTTP_METHOD_MSEARCH,
+    UVHTTP_METHOD_NOTIFY,
+    UVHTTP_METHOD_SUBSCRIBE,
+    UVHTTP_METHOD_UNSUBSCRIBE,
+    UVHTTP_METHOD_PATCH,
+    UVHTTP_METHOD_PURGE,
+    UVHTTP_METHOD_MKCALENDAR,
+    UVHTTP_METHOD_LINK,
+    UVHTTP_METHOD_UNLINK
+} uvhttp_method;
+
+struct uvhttp_message {
+    unsigned long long content_length;
+    unsigned char http_major;
+    unsigned char http_minor;
+    unsigned char status_code;
+    unsigned char method;
+    const char* resp_status;
+    const char* uri;
+    struct uvhttp_header* headers;
 };
 
 const char* uvhttp_error_description(
