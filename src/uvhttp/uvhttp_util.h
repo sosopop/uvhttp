@@ -16,11 +16,6 @@ extern "C" {
 #define UVBUF_SIZE_MULTIPLIER 2
 #endif
 
-struct uvhttp_chunk {
-    unsigned int len;
-    char* base;
-};
-
 struct uvhttp_buffer {
   char *base; 
   unsigned int len;
@@ -63,31 +58,20 @@ void uvhttp_buf_trim(
     struct uvhttp_buffer *
     );
 
-struct uvhttp_list 
-{
-    struct uvhttp_list *next;
-    void* data;
-};
-
-struct uvhttp_list* uvhttp_list_append( 
-    struct uvhttp_list* list,
-    void* data
+char* new_string_buffer( 
+    char* old_buffer,
+    char* append_buffer,
+    int append_len
     );
 
-struct uvhttp_list* uvhttp_list_begin( 
-    struct uvhttp_list* list
-    );
-    
-struct uvhttp_list* uvhttp_list_end( 
-    struct uvhttp_list* list
+char* new_cstring_buffer( 
+    const char* old_buffer,
+    char* append_buffer,
+    int append_len
     );
 
-void uvhttp_list_free(
-    struct uvhttp_list* list
-    );
-
-int uvhttp_list_size(
-    struct uvhttp_list* list
+void free_string_buffer(
+    char* string_buffer
     );
 
 #if defined(__cplusplus)

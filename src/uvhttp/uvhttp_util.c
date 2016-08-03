@@ -105,63 +105,63 @@ void uvhttp_buf_remove(
     }
 }
 
-struct uvhttp_list* uvhttp_list_append( 
-    struct uvhttp_list* list,
-    void* data
+char* new_string_buffer( 
+    char* old_buffer,
+    char* append_buffer,
+    int append_len
     )
 {
-    int len = 0;
-    struct uvhttp_list* first = 0;
-    if ( list == 0) {
-        list = (struct uvhttp_list*)malloc( sizeof(struct uvhttp_list));
-        list->data = data;
-        list->next = (struct uvhttp_list*)malloc( sizeof(struct uvhttp_list));
-        list->next->data = (void*)1;
-        list->next->next = list;
-        return list->next;
+    char* ret_buffer = 0;
+    int ret_len = 0;
+    int old_len = 0;
+    if ( !append_len) {
+        return old_buffer;
     }
-    first = list->next;
-    list->next =  (struct uvhttp_list*)malloc( sizeof(struct uvhttp_list));
-    len = (int)list->data;
-    list->next->data = (void*)(++len);
-    list->next->next = first;
-    list->data = data;
+    if ( old_buffer) {
+        old_len = strlen( old_buffer);
+    }
+    ret_len = old_len + append_len + 1;
+    ret_buffer = (char*)malloc( ret_len);
+    if ( old_len > 0) {
+        memcpy( ret_buffer, old_buffer, old_len );
+        free( old_buffer);
+    }
+    memcpy( ret_buffer + old_len, append_buffer, append_len );
+    ret_buffer[ ret_len - 1] = '\0' ;
 
-    return list->next;
+    return ret_buffer;
 }
 
-struct uvhttp_list* uvhttp_list_begin( 
-    struct uvhttp_list* list
+char* new_cstring_buffer( 
+    const char* old_buffer,
+    char* append_buffer,
+    int append_len
     )
 {
-    return list->next;
-}
-
-struct uvhttp_list* uvhttp_list_end( 
-    struct uvhttp_list* list
-    )
-{
-    return list;
-}
-
-void uvhttp_list_free(
-    struct uvhttp_list* list
-    )
-{
-    struct uvhttp_list* begin = list;
-    struct uvhttp_list* cur = begin;
-    struct uvhttp_list* next = begin;
-    do 
+    char* ret_buffer = 0;
+    int ret_len = 0;
+    int old_len = 0;
+    if ( old_buffer) {
+        old_len = strlen( old_buffer);
+    }
+    ret_len = old_len + append_len + 1;
+    ret_buffer = (char*)malloc( ret_len);
+    if ( old_len > 0) {
+        memcpy( ret_buffer, old_buffer, old_len );
+    }
+    if ( append_len > 0)
     {
-        next = next->next;
-        free( cur);
-        cur = next;
-    } while ( begin != cur);
+        memcpy( ret_buffer + old_len, append_buffer, append_len );
+    }
+    ret_buffer[ ret_len - 1] = '\0' ;
+    return ret_buffer;
 }
 
-int uvhttp_list_size(
-    struct uvhttp_list* list
+void free_string_buffer(
+    char* string_buffer
     )
 {
-    return (int)list->data;
+    if ( string_buffer) {
+        free( string_buffer);
+    }
 }

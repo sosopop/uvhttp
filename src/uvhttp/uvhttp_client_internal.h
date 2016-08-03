@@ -22,13 +22,11 @@ struct  uvhttp_client_obj {
     uvhttp_client_response_callback end_callback;
 
     struct uvhttp_buffer request_buffer;
-
     struct uvhttp_message response;
     http_parser parser;
     struct uvhttp_buffer net_buffer_in;
     struct uvhttp_buffer net_buffer_out;
 
-    unsigned char header_complete:1;
     unsigned char deleted:1;
 };
 

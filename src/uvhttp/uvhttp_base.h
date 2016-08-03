@@ -15,9 +15,14 @@ typedef enum {
 } uvhttp_error_code;
 
 struct uvhttp_header {
-    const char* key;
-    const char* value;
+    char* field;
+    char* value;
     struct uvhttp_header* next;
+};
+
+struct uvhttp_chunk {
+    unsigned int len;
+    char* base;
 };
 
 typedef enum {
@@ -83,6 +88,19 @@ int uvhttp_run(
 
 void uvhttp_stop(
     uvhttp_loop loop
+    );
+
+
+struct uvhttp_header* uvhttp_headers_begin( 
+    struct uvhttp_header* headers
+    );
+
+struct uvhttp_header* uvhttp_headers_end( 
+    struct uvhttp_header* headers
+    );
+
+int uvhttp_headers_size(
+    struct uvhttp_header* headers
     );
 
 #if defined(__cplusplus)

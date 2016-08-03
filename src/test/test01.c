@@ -1,117 +1,58 @@
 #include <stdio.h>
+#include <string.h>
 #include "unittest.h"
 #include "uvhttp.h"
 #include "http_parser.h"
-
-//static int http_parser_on_srv_message_begin(
-//    http_parser* parser
-//    )
-//{
-//    return 0;
-//}
-//
-//static int http_parser_on_srv_url(
-//    http_parser* parser,
-//    const char *at,
-//    size_t length
-//    )
-//{
-//    return 0;
-//}
-//
-//static int http_parser_on_srv_header_field(
-//    http_parser* parser,
-//    const char *at,
-//    size_t length
-//    )
-//{
-//    return 0;
-//}
-//
-//static int http_parser_on_srv_header_value(
-//    http_parser* parser,
-//    const char *at,
-//    size_t length
-//    )
-//{
-//    return 0;
-//}
-//
-//static int http_parser_on_srv_headers_complete(
-//    http_parser* parser
-//    )
-//{
-//    return 0;
-//}
-//
-//static int http_parser_on_srv_body(
-//    http_parser* parser,
-//    const char *at,
-//    size_t length
-//    )
-//{
-//    return 0;
-//}
-//
-//static int http_parser_on_srv_message_complete(
-//    http_parser* parser
-//    )
-//{
-//    return 0;
-//}
-//
-//static int http_parser_on_srv_chunk_header(
-//    http_parser* parser
-//    )
-//{
-//    return 0;
-//}
-//
-//static int http_parser_on_srv_chunk_complete(
-//    http_parser* parser
-//    )
-//{
-//    return 0;
-//}
-//static http_parser_settings srv_parser_settings = {
-//    http_parser_on_srv_message_begin,
-//    http_parser_on_srv_url,
-//    0,
-//    http_parser_on_srv_header_field,
-//    http_parser_on_srv_header_value,
-//    http_parser_on_srv_headers_complete,
-//    http_parser_on_srv_body,
-//    http_parser_on_srv_message_complete,
-//    http_parser_on_srv_chunk_header,
-//    http_parser_on_srv_chunk_complete
-//};
+#include "uvhttp_util.h"
+#include "uvhttp_base.h"
+#include "uvhttp_internal.h"
 
 void do_test01(){
     TEST_EQ(0==0);
     TEST_EQ(1==1);
+    //²âÊÔstring_buffer
+    {
+        char* str1 = new_cstring_buffer( "123", 0, 0);
+        char* str2 = new_cstring_buffer( "!!!", 0, 0);
+        char* str3 = 0;
+        TEST_EQ( strcmp( str1, "123") == 0);
+        free_string_buffer( str1);
+        str1 = new_cstring_buffer( "123", "123456", 6 );
+        TEST_EQ( strcmp( str1, "123123456") == 0);
+        str3 = new_cstring_buffer( str2, str1, strlen(str1) );
+        TEST_EQ( strcmp( str3, "!!!123123456") == 0)
+        free_string_buffer( str1);
+        free_string_buffer( str2);
+        free_string_buffer( str3);
+    }
     //²âÊÔuvhttp_list
     {
-        struct uvhttp_list* list = 0;
-        struct uvhttp_list* end = 0;
-        struct uvhttp_list* iter = 0;
+        struct uvhttp_header* list = 0;
+        struct uvhttp_header* end = 0;
+        struct uvhttp_header* iter = 0;
         int test_count = 0;
+        int c = 0;
 
-        list = uvhttp_list_append( list , (void*)4);
-        TEST_EQ( uvhttp_list_size(list) == 1);
-        list = uvhttp_list_append( list , (void*)5);
-        TEST_EQ( uvhttp_list_size(list) == 2);
-        list = uvhttp_list_append( list , (void*)6);
-        TEST_EQ( uvhttp_list_size(list) == 3);
+        list = uvhttp_headers_append( list , new_cstring_buffer( 0, "1", 1 ), new_cstring_buffer( 0, "2", 1 ) );
+        TEST_EQ( uvhttp_headers_size(list) == 1);
+        list = uvhttp_headers_append( list, new_cstring_buffer( 0, "3", 1 ), new_cstring_buffer( 0, "4", 1 ));
+        TEST_EQ( uvhttp_headers_size(list) == 2);
+        list = uvhttp_headers_append( list, new_cstring_buffer( 0, "5", 1 ), new_cstring_buffer( 0, "6", 1 ));
+        TEST_EQ( uvhttp_headers_size(list) == 3);
 
-        iter = uvhttp_list_begin( list);
-        end = uvhttp_list_end( list);
+        iter = uvhttp_headers_begin( list);
+        end = uvhttp_headers_end( list);
 
         for ( ; iter !=end ; iter = iter->next ) {
-            test_count += (int)iter->data;
+            int field = atoi(iter->field);
+            int value = atoi(iter->value);
+            TEST_EQ( field == (( c + 1) * 2 -1));
+            TEST_EQ( value == (( c + 1) * 2));
+            free_string_buffer( iter->field);
+            free_string_buffer( iter->value);
+            c ++;
         }
 
-        TEST_EQ( test_count == 15);
-
-        uvhttp_list_free( list);
+        uvhttp_headers_free( list);
     }
 }

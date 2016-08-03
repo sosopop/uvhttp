@@ -14,7 +14,7 @@ int uvhttp_server_set_option(
     {
     case UVHTTP_SRV_OPT_USER_DATA:
         break;
-    case UVHTTP_SRV_OPT_REQUEST_CB:
+    case UVHTTP_SRV_OPT_SESSION_BEGIN_CB:
         break;
     case UVHTTP_SRV_OPT_END_CB:
         break;
