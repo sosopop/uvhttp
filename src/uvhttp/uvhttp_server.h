@@ -12,7 +12,7 @@ typedef void* uvhttp_session;
 
 typedef enum {
     UVHTTP_SRV_OPT_USER_DATA,
-    UVHTTP_SRV_OPT_SESSION_BEGIN_CB,
+    UVHTTP_SRV_OPT_SESSION_NEW_CB,
     UVHTTP_SRV_OPT_END_CB
 } uvhttp_server_option;
 
@@ -37,7 +37,12 @@ typedef enum {
     UVHTTP_SESSION_INFO_LOOP
 } uvhttp_session_info;
 
-typedef void (*uvhttp_server_request_callback)(
+typedef void (*uvhttp_server_session_new_callback)(
+    uvhttp_server server,
+    uvhttp_session session
+    );
+
+typedef void (*uvhttp_session_request_callback)(
     uvhttp_session session,
     struct uvhttp_message* request
     );
@@ -46,9 +51,13 @@ typedef void (*uvhttp_session_body_read_callback)(
     uvhttp_session session,
     struct uvhttp_chunk data
     );
+    
+typedef void (*uvhttp_session_request_end_callback)(
+    int status,
+    uvhttp_session session
+    );
 
 typedef void (*uvhttp_session_end_callback)(
-    int status,
     uvhttp_session session
     );
 
@@ -100,13 +109,14 @@ uvhttp_server uvhttp_server_new(
     uvhttp_loop loop
     );
 
-void uvhttp_server_delete(
-    uvhttp_server server
+int uvhttp_server_ip4_listen(
+    uvhttp_server server,
+    const char* ip,
+    int port
     );
 
-int uvhttp_server_listen(
-    uvhttp_server server,
-    int port
+void uvhttp_server_delete(
+    uvhttp_server server
     );
 
 int uvhttp_server_abort(

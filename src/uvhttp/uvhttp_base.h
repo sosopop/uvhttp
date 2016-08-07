@@ -10,8 +10,11 @@ extern "C" {
 typedef void* uvhttp_loop;
 
 typedef enum {
-    UVHTTP_ERROR_OK,
-    UVHTTP_ERROR_FAILED
+    UVHTTP_LIBUV = -1,
+    UVHTTP_OK = 0,
+    UVHTTP_ERROR_FAILED = 1,
+    UVHTTP_ERROR_NOOPTIONS,
+    UVHTTP_ERROR_PARAMS_INVALID
 } uvhttp_error_code;
 
 struct uvhttp_header {

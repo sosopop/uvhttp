@@ -1,5 +1,5 @@
-#ifndef UVHTTP_INTERNAL_H__
-#define UVHTTP_INTERNAL_H__
+#ifndef UVHTTP_SERVER_INTERNAL_H__
+#define UVHTTP_SERVER_INTERNAL_H__
 
 #include <uv.h>
 #include "uvhttp_internal.h"
@@ -16,7 +16,7 @@ struct uvhttp_server_obj {
     void* user_data;
     uv_loop_t* loop;
     uv_tcp_t* tcp;
-    uvhttp_server_request_callback request_callback;
+    uvhttp_server_session_new_callback session_new_callback;
     uvhttp_server_end_callback end_callback;
     unsigned char deleted:1;
 } ;
@@ -25,18 +25,21 @@ struct  uvhttp_session_obj {
     void* user_data;
     uv_loop_t* loop;
     uv_tcp_t* tcp;
-    uvhttp_session_body_read_callback read_callback;
+    uvhttp_session_request_callback request_callback;
+    uvhttp_session_body_read_callback body_read_callback;
+    uvhttp_session_request_end_callback request_end_callback;
     uvhttp_session_end_callback end_callback;
-    struct uvhttp_server_obj* server;
+    uvhttp_session_write_callback write_callback;
+    struct uvhttp_server_obj* server_obj;
 
     struct uvhttp_message request;
     http_parser parser;
     char net_buffer_in[UVHTTP_NET_BUFFER_SIZE];
-    uvhttp_buffer user_buffer_out;
-    uvhttp_buffer net_buffer_out;
+    struct uvhttp_buffer user_buffer_out;
+    struct uvhttp_buffer net_buffer_out;
 };
 
 #if defined(__cplusplus)
 }
 #endif /* __cplusplus */
-#endif // UVHTTP_INTERNAL_H__
+#endif // UVHTTP_SERVER_INTERNAL_H__
