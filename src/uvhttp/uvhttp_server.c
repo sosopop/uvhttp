@@ -28,6 +28,14 @@ static void session_delete(
     struct uvhttp_session_obj* session_obj
     );
 
+static void session_reset( 
+    struct uvhttp_session_obj* session_obj
+    );
+    
+static void session_error(
+    struct uvhttp_session_obj* session_obj
+    );
+
 int uvhttp_server_set_option( 
     uvhttp_server server,
     uvhttp_server_option option,
@@ -192,6 +200,7 @@ int uvhttp_server_ip4_listen(
     int ret = uv_tcp_init( server_obj->loop, server_obj->tcp);
     if ( ret != 0)
         goto cleanup;
+    server_obj->status = UVHTTP_SRV_STATUS_RUNNING;
     ret = uv_ip4_addr( ip, port, &addr);
     if ( ret != 0)
         goto cleanup;
@@ -260,6 +269,146 @@ static void session_data_alloc(
     uv_buf_t* buf
     )
 {
+    struct uvhttp_session_obj* session_obj = (struct uvhttp_session_obj*)handle->data;
+    *buf = uv_buf_init(
+        session_obj->net_buffer_in,
+        UVHTTP_NET_BUFFER_SIZE
+        );
+}
+
+
+static int http_parser_on_srv_message_begin(
+    http_parser* parser
+    )
+{
+    struct uvhttp_session_obj* session_obj = UVHTTP_CONTAINER_PTR( struct uvhttp_session_obj, parser, parser );
+    session_reset( session_obj);
+    return 0;
+}
+
+static int http_parser_on_srv_url(
+    http_parser* parser,
+    const char *at,
+    size_t length
+    )
+{
+    struct uvhttp_session_obj* session_obj = UVHTTP_CONTAINER_PTR( struct uvhttp_session_obj, parser, parser );
+    session_obj->request.uri = new_string_buffer( session_obj->request.uri, at, length);
+    return 0;
+}
+
+static int http_parser_on_srv_header_field(
+    http_parser* parser,
+    const char *at,
+    size_t length
+    )
+{
+    struct uvhttp_session_obj* session_obj = UVHTTP_CONTAINER_PTR( struct uvhttp_session_obj, parser, parser );
+    if ( session_obj->temp_header_value) {
+        session_obj->request.headers = uvhttp_headers_append( session_obj->request.headers, 
+            session_obj->temp_header_field, session_obj->temp_header_value);
+        session_obj->temp_header_field = 0;
+        session_obj->temp_header_value = 0;
+    }
+    session_obj->temp_header_field = new_string_buffer( session_obj->temp_header_field, at, length);
+    return 0;
+}
+
+static int http_parser_on_srv_header_value(
+    http_parser* parser,
+    const char *at,
+    size_t length
+    )
+{
+    struct uvhttp_session_obj* session_obj = UVHTTP_CONTAINER_PTR( struct uvhttp_session_obj, parser, parser );
+    session_obj->temp_header_value = new_string_buffer( session_obj->temp_header_value, at, length);
+    return 0;
+}
+
+static int http_parser_on_srv_headers_complete(
+    http_parser* parser
+    )
+{
+    struct uvhttp_session_obj* session_obj = UVHTTP_CONTAINER_PTR( struct uvhttp_session_obj, parser, parser );
+    if ( session_obj->temp_header_value) {
+        session_obj->request.headers = uvhttp_headers_append( session_obj->request.headers, 
+            session_obj->temp_header_field, session_obj->temp_header_value);
+        session_obj->temp_header_field = 0;
+        session_obj->temp_header_value = 0;
+    }
+    if ( session_obj->request_callback) {
+        session_obj->request_callback(
+            session_obj,
+            &session_obj->request
+            );
+    }
+    return 0;
+}
+
+static int http_parser_on_srv_body(
+    http_parser* parser,
+    const char *at,
+    size_t length
+    )
+{
+    struct uvhttp_session_obj* session_obj = UVHTTP_CONTAINER_PTR( struct uvhttp_session_obj, parser, parser );
+    struct uvhttp_chunk chunk;
+    chunk.base = (char*)at;
+    chunk.len = length;
+    session_obj->body_read_callback(
+        session_obj,
+        chunk
+        );
+    return 0;
+}
+
+static int http_parser_on_srv_message_complete(
+    http_parser* parser
+    )
+{
+    struct uvhttp_session_obj* session_obj = UVHTTP_CONTAINER_PTR( struct uvhttp_session_obj, parser, parser );
+    if ( session_obj->request_end_callback) {
+        session_obj->request_end_callback( UVHTTP_OK, session_obj);
+    }
+    session_obj->request_end = 1;
+    return 0;
+}
+
+static int http_parser_on_srv_chunk_header(
+    http_parser* parser
+    )
+{
+    return 0;
+}
+
+static int http_parser_on_srv_chunk_complete(
+    http_parser* parser
+    )
+{
+    return 0;
+}
+
+static http_parser_settings session_parser_settings = {
+    http_parser_on_srv_message_begin,
+    http_parser_on_srv_url,
+    0,
+    http_parser_on_srv_header_field,
+    http_parser_on_srv_header_value,
+    http_parser_on_srv_headers_complete,
+    http_parser_on_srv_body,
+    http_parser_on_srv_message_complete,
+    http_parser_on_srv_chunk_header,
+    http_parser_on_srv_chunk_complete
+};
+
+static void session_shutdown(
+    uv_shutdown_t* req, 
+    int status
+    )
+{
+    struct uvhttp_session_obj* session_obj = (struct uvhttp_session_obj*)req->data;
+    session_close( session_obj);
+    free(req);
 }
 
 static void session_data_read(
@@ -268,18 +417,197 @@ static void session_data_read(
     const uv_buf_t* buf
     )
 {
+    struct uvhttp_session_obj* session_obj = (struct uvhttp_session_obj*)stream->data;
+    size_t nparsed = 0;
+
+    if ( nread > 0) {
+        nparsed = http_parser_execute(&session_obj->parser, &session_parser_settings, buf->base, nread);
+        if ( session_obj->parser.http_errno != 0) {
+            session_obj->last_error = UVHTTP_ERROR_HTTP_PARSER;
+            goto error;
+        }
+        if ( session_obj->parser.upgrade) {
+            session_obj->last_error = UVHTTP_ERROR_HTTP_PARSER;
+            goto error;
+        } else if (nparsed != nread) {
+            session_obj->last_error = UVHTTP_ERROR_HTTP_PARSER;
+            goto error;
+        }
+    }
+    else if ( nread == 0) {
+        goto read_more;
+    }
+    else if( nread == UV_EOF) {
+        uv_shutdown_t* req = (uv_shutdown_t*)malloc(sizeof(uv_shutdown_t));
+        req->data = session_obj;
+        session_obj->last_error = UVHTTP_ERROR_PEER_CLOSED;
+        uv_shutdown(req, (uv_stream_t*)session_obj->tcp, session_shutdown);
+        goto error;
+    }
+    else if (nread == UV_ECONNRESET || nread == UV_ECONNABORTED) {
+        session_obj->last_error = UVHTTP_ERROR_PEER_CLOSED;
+        session_close( session_obj);
+        goto error;
+    }
+    else if (nread == UV_ENOBUFS) {
+        session_obj->last_error = UVHTTP_ERROR_NO_BUFFERS;
+        goto error;
+    }
+read_more:
+    ;
+    return;
+error:
+    session_error( session_obj);
+}
+
+static void session_error(
+    struct uvhttp_session_obj* session_obj
+    )
+{
+    if ( session_obj->request_end == 0 && session_obj->request_end_callback) {
+        if ( session_obj->last_error != UVHTTP_OK) {
+            session_obj->request_end_callback(  session_obj->last_error, session_obj);
+        }
+        else {
+            session_obj->request_end_callback(  UVHTTP_ERROR_FAILED, session_obj);
+        }
+        session_obj->request_end = 1;
+    }
+}
+
+static void session_closed( 
+    uv_handle_t* handle
+    )
+{
+    struct uvhttp_session_obj* session_obj = (struct uvhttp_session_obj*)handle->data;
+    //如果关闭连接之前有错误导致request_end没有调用，则先通知request_end
+    session_error( session_obj);
+    //关闭连接回调
+    if ( session_obj->end_callback) {
+        session_obj->end_callback( session_obj);
+    }
+    //删除会话数据
+    session_delete( session_obj);
 }
 
 static void session_close( 
     struct uvhttp_session_obj* session_obj
     )
 {
+    if ( uv_is_closing( (uv_handle_t*)session_obj->tcp) == 0)
+        uv_close( (uv_handle_t*)session_obj->tcp, session_closed);
+}
+    
+static void session_reset( 
+    struct uvhttp_session_obj* session_obj
+    )
+{
+    struct uvhttp_header* list = session_obj->request.headers;
+    struct uvhttp_header* end = 0;
+    struct uvhttp_header* iter = 0;
+
+    if ( list) {
+        iter = uvhttp_headers_begin( list);
+        end = uvhttp_headers_end( list);
+
+        for ( ; iter !=end ; iter = iter->next ) {
+            free_string_buffer( iter->field);
+            free_string_buffer( iter->value);
+        }
+
+        if ( session_obj->request.headers) {
+            uvhttp_headers_free( session_obj->request.headers);
+        }
+    }
+
+    if ( session_obj->temp_header_field) {
+        free_string_buffer( session_obj->temp_header_field);
+        session_obj->temp_header_field = 0;
+    }
+    if ( session_obj->temp_header_value) {
+        free_string_buffer( session_obj->temp_header_value);
+        session_obj->temp_header_value = 0;
+    }
+    if ( session_obj->request.uri) {
+        free_string_buffer( (char*)session_obj->request.uri);
+        session_obj->request.uri = 0;
+    }
+
+    //是否已经接收完成request请求
+    session_obj->request_end = 0;
+    session_obj->last_error = UVHTTP_OK;
 }
 
 static void session_delete( 
     struct uvhttp_session_obj* session_obj
     )
 {
+    session_reset( session_obj);
     UVHTTP_SAFE_FREE( session_obj->tcp);
     free( session_obj);
+}
+    
+void server_delete(
+    struct uvhttp_server_obj* server_obj
+    )
+{
+    if ( server_obj->tcp) {
+        UVHTTP_SAFE_FREE( server_obj->tcp);
+    }
+    free( server_obj);
+}
+
+void uvhttp_server_delete(
+    uvhttp_server server
+    )
+{
+    struct uvhttp_server_obj* server_obj = (struct uvhttp_server_obj*)server;
+    if ( server_obj->deleted ) {
+        return;
+    }
+    if ( server_obj->status == UVHTTP_SRV_STATUS_RUNNING ) {
+        server_obj->deleted = 1;
+        uvhttp_server_abort( server_obj);
+    }
+    else {
+        server_delete( server_obj);
+    }
+}
+
+int uvhttp_session_abort(
+    uvhttp_session session
+    )
+{
+    session_close( (struct uvhttp_session_obj*)session);
+    return UVHTTP_OK;
+}
+
+static void server_closed( 
+    uv_handle_t* handle
+    )
+{
+    struct uvhttp_server_obj* server = (struct uvhttp_server_obj*)handle->data;
+    server->status = UVHTTP_SRV_STATUS_CLOSED;
+    if ( server->end_callback) {
+        server->end_callback( UVHTTP_OK, server);
+    }
+    if ( server->deleted) {
+        server_delete( server);
+    }
+}
+
+static void server_close(
+    struct uvhttp_server_obj* server
+    )
+{
+    if ( uv_is_closing( (uv_handle_t*)server->tcp) == 0)
+        uv_close( (uv_handle_t*)server->tcp, server_closed);
+}
+
+int uvhttp_server_abort(
+    uvhttp_server server
+    )
+{
+    server_close( (struct uvhttp_server_obj*)server);
+    return UVHTTP_OK;
 }

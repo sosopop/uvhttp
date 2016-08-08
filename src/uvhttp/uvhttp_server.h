@@ -90,7 +90,7 @@ int uvhttp_session_write(
     );
 
 int uvhttp_session_abort(
-    uvhttp_session_info session
+    uvhttp_session session
     );
 
 int uvhttp_server_set_option( 

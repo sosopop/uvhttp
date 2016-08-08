@@ -11,6 +11,13 @@
 #if defined(__cplusplus)
 extern "C" {
 #endif
+    
+typedef enum
+{
+    UVHTTP_SRV_STATUS_INITED,
+    UVHTTP_SRV_STATUS_RUNNING,
+    UVHTTP_SRV_STATUS_CLOSED
+} uvhttp_srv_status;
 
 struct uvhttp_server_obj {
     void* user_data;
@@ -19,6 +26,7 @@ struct uvhttp_server_obj {
     uvhttp_server_session_new_callback session_new_callback;
     uvhttp_server_end_callback end_callback;
     unsigned char deleted:1;
+    unsigned char status:7;
 } ;
 
 struct  uvhttp_session_obj {
@@ -37,6 +45,10 @@ struct  uvhttp_session_obj {
     char net_buffer_in[UVHTTP_NET_BUFFER_SIZE];
     struct uvhttp_buffer user_buffer_out;
     struct uvhttp_buffer net_buffer_out;
+    char* temp_header_field;
+    char* temp_header_value;
+    int last_error;
+    unsigned short request_end;
 };
 
 #if defined(__cplusplus)

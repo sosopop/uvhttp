@@ -11,9 +11,9 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{3E53B8D1-7C82-461E-8715-7A61E0162DF8}</ProjectGuid>
+    <ProjectGuid>{BA464567-A914-40B4-A6C7-E6D279F437EC}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>test</RootNamespace>
+    <RootNamespace>helloworld</RootNamespace>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -50,10 +50,8 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../../src/uvhttp</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-      <CompileAs>CompileAsC</CompileAs>
-      <AdditionalIncludeDirectories>../../src/uvhttp;../../src/libuv/include</AdditionalIncludeDirectories>
-      <TreatWarningAsError>true</TreatWarningAsError>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -70,9 +68,8 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../../src/uvhttp</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <CompileAs>CompileAsC</CompileAs>
-      <AdditionalIncludeDirectories>../../src/uvhttp;../../src/libuv/include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -83,22 +80,18 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\src\test\main.c" />
-    <ClCompile Include="..\..\src\test\test01.c" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="..\..\src\test\unittest.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="libuv.vcxproj">
+    <ProjectReference Include="..\win32\libuv.vcxproj">
       <Project>{5284e913-6e16-401a-a189-9c9ffcde1abd}</Project>
     </ProjectReference>
-    <ProjectReference Include="mbedtls.vcxproj">
+    <ProjectReference Include="..\win32\mbedtls.vcxproj">
       <Project>{6464decc-588c-4b4a-8377-1c02d69caa39}</Project>
     </ProjectReference>
-    <ProjectReference Include="uvhttp.vcxproj">
+    <ProjectReference Include="..\win32\uvhttp.vcxproj">
       <Project>{c76b146a-981e-45c4-b530-c9ee7c37c3c6}</Project>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\src\helloworld\main.c" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

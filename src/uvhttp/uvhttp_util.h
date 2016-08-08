@@ -59,14 +59,14 @@ void uvhttp_buf_trim(
     );
 
 char* new_string_buffer( 
-    char* old_buffer,
-    char* append_buffer,
+    const char* old_buffer,
+    const char* append_buffer,
     int append_len
     );
 
 char* new_cstring_buffer( 
     const char* old_buffer,
-    char* append_buffer,
+    const char* append_buffer,
     int append_len
     );
 

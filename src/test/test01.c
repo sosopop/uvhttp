@@ -55,4 +55,18 @@ void do_test01(){
 
         uvhttp_headers_free( list);
     }
+    //≤‚ ‘httpserver
+    {
+        uvhttp_loop loop = uvhttp_loop_new();
+        if ( loop) {
+            uvhttp_server server = uvhttp_server_new( loop);
+            if ( server) {
+                if ( uvhttp_server_ip4_listen( server, "0.0.0.0", 8011) == UVHTTP_OK) {
+                }
+            }
+            uvhttp_run( loop);
+            uvhttp_server_delete( server);
+            uvhttp_loop_delete( loop);
+        }
+    }
 }

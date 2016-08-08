@@ -106,8 +106,8 @@ void uvhttp_buf_remove(
 }
 
 char* new_string_buffer( 
-    char* old_buffer,
-    char* append_buffer,
+    const char* old_buffer,
+    const char* append_buffer,
     int append_len
     )
 {
@@ -115,7 +115,7 @@ char* new_string_buffer(
     int ret_len = 0;
     int old_len = 0;
     if ( !append_len) {
-        return old_buffer;
+        return (char*)old_buffer;
     }
     if ( old_buffer) {
         old_len = strlen( old_buffer);
@@ -124,7 +124,7 @@ char* new_string_buffer(
     ret_buffer = (char*)malloc( ret_len);
     if ( old_len > 0) {
         memcpy( ret_buffer, old_buffer, old_len );
-        free( old_buffer);
+        free( (char*)old_buffer);
     }
     memcpy( ret_buffer + old_len, append_buffer, append_len );
     ret_buffer[ ret_len - 1] = '\0' ;
@@ -134,7 +134,7 @@ char* new_string_buffer(
 
 char* new_cstring_buffer( 
     const char* old_buffer,
-    char* append_buffer,
+    const char* append_buffer,
     int append_len
     )
 {

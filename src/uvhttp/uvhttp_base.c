@@ -1,4 +1,5 @@
 #include "uvhttp_base.h"
+#include <uv.h>
 
 struct uvhttp_header* uvhttp_headers_append( 
     struct uvhttp_header* headers,
@@ -62,4 +63,29 @@ int uvhttp_headers_size(
     )
 {
     return (int)headers->field;
+}
+uvhttp_loop uvhttp_loop_new( )
+{
+    return (uvhttp_loop)uv_loop_new();
+}
+
+void uvhttp_loop_delete( 
+    uvhttp_loop loop
+    )
+{
+    uv_loop_delete( (uv_loop_t*)loop);
+}
+
+int uvhttp_run( 
+    uvhttp_loop loop
+    )
+{
+    return uv_run( (uv_loop_t*)loop, UV_RUN_DEFAULT);
+}
+
+void uvhttp_stop(
+    uvhttp_loop loop
+    )
+{
+    uv_stop( (uv_loop_t*)loop);
 }
