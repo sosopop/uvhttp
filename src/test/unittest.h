@@ -1,5 +1,5 @@
-#ifndef test_util_h__
-#define test_util_h__
+#ifndef TEST_UTIL_H__
+#define TEST_UTIL_H__
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -10,4 +10,7 @@
     }else{\
         printf( "File: %s(%d),Expression:%s  \033[0;32;40mPassed\033[0m\n", __FILE__, __LINE__, #u);\
     }
-#endif // test_util_h__
+
+void app_path( char* path, unsigned int path_size, const char* path_append);
+void run_shell( const char* cmd);
+#endif // TEST_UTIL_H__

@@ -161,7 +161,5 @@ void free_string_buffer(
     char* string_buffer
     )
 {
-    if ( string_buffer) {
-        free( string_buffer);
-    }
+    free( string_buffer);
 }

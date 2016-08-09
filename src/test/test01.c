@@ -10,7 +10,7 @@
 void do_test01(){
     TEST_EQ(0==0);
     TEST_EQ(1==1);
-    //≤‚ ‘string_buffer
+    printf( "TEST: string_buffer\n");
     {
         char* str1 = new_cstring_buffer( "123", 0, 0);
         char* str2 = new_cstring_buffer( "!!!", 0, 0);
@@ -25,7 +25,7 @@ void do_test01(){
         free_string_buffer( str2);
         free_string_buffer( str3);
     }
-    //≤‚ ‘uvhttp_list
+    printf( "TEST: uvhttp_header\n");
     {
         struct uvhttp_header* list = 0;
         struct uvhttp_header* end = 0;
@@ -54,19 +54,5 @@ void do_test01(){
         }
 
         uvhttp_headers_free( list);
-    }
-    //≤‚ ‘httpserver
-    {
-        uvhttp_loop loop = uvhttp_loop_new();
-        if ( loop) {
-            uvhttp_server server = uvhttp_server_new( loop);
-            if ( server) {
-                if ( uvhttp_server_ip4_listen( server, "0.0.0.0", 8011) == UVHTTP_OK) {
-                }
-            }
-            uvhttp_run( loop);
-            uvhttp_server_delete( server);
-            uvhttp_loop_delete( loop);
-        }
     }
 }
