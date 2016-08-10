@@ -27,11 +27,32 @@ static void uvhttp_session_body_read(
     printf( "request body: %.*s\n", data.len, data.base);
 }
 
+#define RESPONSE \
+    "HTTP/1.1 200 OK\r\n" \
+    "Content-Type: text/plain\r\n" \
+    "Content-Length: 11\r\n" \
+    "Connection: keep-alive\r\n" \
+    "\r\n" \
+    "Hello World" 
+    
+void session_writed(
+    int status,
+    uvhttp_session session,
+    void* user_data
+    )
+{
+    uvhttp_session_abort( session);
+}
+
 static void uvhttp_session_request_end(
     int status,
     uvhttp_session session
     )
 {
+    struct uvhttp_chunk response;
+    response.base = RESPONSE;
+    response.len = sizeof(RESPONSE) - 1;
+    uvhttp_session_write( session, &response, 0, session_writed);
     printf( "session request end!\n");
 }
 

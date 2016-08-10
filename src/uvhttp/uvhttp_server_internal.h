@@ -37,7 +37,6 @@ struct  uvhttp_session_obj {
     uvhttp_session_body_read_callback body_read_callback;
     uvhttp_session_request_end_callback request_end_callback;
     uvhttp_session_end_callback end_callback;
-    uvhttp_session_write_callback write_callback;
     struct uvhttp_server_obj* server_obj;
 
     struct uvhttp_message request;
@@ -49,6 +48,13 @@ struct  uvhttp_session_obj {
     char* temp_header_value;
     int last_error;
     unsigned short request_end;
+};
+
+struct uvhttp_write_request {
+    uv_write_t write_req;
+    uvhttp_session session;
+    void* user_data;
+    uvhttp_session_write_callback write_callback;
 };
 
 #if defined(__cplusplus)

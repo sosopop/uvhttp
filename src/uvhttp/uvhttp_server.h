@@ -21,7 +21,6 @@ typedef enum {
     UVHTTP_SESSION_OPT_REQUEST_CB,
     UVHTTP_SESSION_OPT_REQUEST_BODY_CB,
     UVHTTP_SESSION_OPT_REQUEST_END_CB,
-    UVHTTP_SESSION_OPT_WRITE_CB,
     UVHTTP_SESSION_OPT_END_CB
 } uvhttp_session_option;
 
@@ -63,7 +62,8 @@ typedef void (*uvhttp_session_end_callback)(
 
 typedef void (*uvhttp_session_write_callback)(
     int status,
-    uvhttp_session session
+    uvhttp_session session,
+    void* user_data
     );
 
 typedef void (*uvhttp_server_end_callback)(
@@ -85,7 +85,8 @@ int uvhttp_session_get_info(
 
 int uvhttp_session_write(
     uvhttp_session session,
-    struct uvhttp_chunk* data,
+    struct uvhttp_chunk* buffer,
+    void* user_data,
     uvhttp_session_write_callback write_callback 
     );
 

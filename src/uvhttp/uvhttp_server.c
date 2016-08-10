@@ -89,9 +89,6 @@ int uvhttp_session_set_option(
     case UVHTTP_SESSION_OPT_REQUEST_END_CB:
         session_obj->request_end_callback = va_arg(ap, uvhttp_session_request_end_callback);
         break;
-    case UVHTTP_SESSION_OPT_WRITE_CB:
-        session_obj->write_callback = va_arg(ap, uvhttp_session_write_callback);
-        break;
     case UVHTTP_SESSION_OPT_END_CB:
         session_obj->end_callback = va_arg(ap, uvhttp_session_end_callback);
         break;
@@ -610,4 +607,37 @@ int uvhttp_server_abort(
 {
     server_close( (struct uvhttp_server_obj*)server);
     return UVHTTP_OK;
+}
+
+static void session_write_callback(
+    uv_write_t* req,
+    int status
+    )
+{
+    struct uvhttp_write_request* write_req = (struct uvhttp_write_request*)req;
+    write_req->write_callback( status, write_req->session, write_req->user_data );
+    free( req);
+}
+
+int uvhttp_session_write(
+    uvhttp_session session,
+    struct uvhttp_chunk* buffer,
+    void* user_data,
+    uvhttp_session_write_callback write_callback 
+    )
+{
+    int ret = UVHTTP_OK;
+    struct uvhttp_session_obj* session_obj = (struct uvhttp_session_obj*)session;
+    struct uvhttp_write_request* write_req = (struct uvhttp_write_request*)malloc( sizeof(struct uvhttp_write_request));
+    uv_buf_t write_buffer;
+    write_buffer.base = buffer->base;
+    write_buffer.len = buffer->len;
+    write_req->user_data = user_data;
+    write_req->session = session;
+    write_req->write_callback = write_callback;
+    ret = uv_write( &write_req->write_req, (uv_stream_t*)session_obj->tcp, &write_buffer, 1, session_write_callback);
+    if ( ret != UVHTTP_OK) {
+        free( write_req);
+    }
+    return ret;
 }

@@ -96,7 +96,6 @@ void uvhttp_stop(
     uvhttp_loop loop
     );
 
-
 struct uvhttp_header* uvhttp_headers_begin( 
     struct uvhttp_header* headers
     );
