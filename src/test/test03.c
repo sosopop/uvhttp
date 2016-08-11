@@ -17,6 +17,7 @@ static char uvhttp_session_end_called = 0;
 static char uvhttp_session_write_called = 0;
 static char uvhttp_server_end_called = 0;
 static char* request_body = 0;
+static int request_count = 0;
 
 static void session_writed(
     int status,
@@ -26,7 +27,10 @@ static void session_writed(
 {
     TEST_EQ( status == 0);
     uvhttp_session_write_called = 1;
-    uvhttp_session_abort( session);
+    request_count ++;
+    if ( request_count == 1000) {
+        uvhttp_session_abort( session);
+    }
 }
 
 static void uvhttp_session_request(
@@ -49,7 +53,7 @@ static void uvhttp_session_request(
         }
     }
 
-    TEST_EQ( strcmp( request->uri, "/test02.txt") == 0);
+    TEST_EQ( strcmp( request->uri, "/test") == 0);
     TEST_EQ( find_host);
     uvhttp_session_request_called = 1;
 }
@@ -60,7 +64,6 @@ static void uvhttp_session_body_read(
     )
 {
     uvhttp_session_body_read_called = 1;
-    request_body =  new_string_buffer( request_body, data.base, data.len);
 }
 
 #define RESPONSE \
@@ -121,8 +124,8 @@ static void uvhttp_server_end(
     uvhttp_server_end_called = 1;
 }
 
-void do_test02(){
-    printf( "TEST: uvhttp_server begin\n");
+void do_test03(){
+    printf( "TEST: uvhttp_server keep_alive test begin\n");
     {
         FILE* test_file = 0;
         int test_file_size = 0;
@@ -137,7 +140,7 @@ void do_test02(){
         uvhttp_server_set_option( server, UVHTTP_SRV_OPT_END_CB, uvhttp_server_end);
         uvhttp_server_set_option( server, UVHTTP_SRV_OPT_SESSION_NEW_CB, uvhttp_server_session_new);
         TEST_EQ( uvhttp_server_ip4_listen( server, "0.0.0.0", 8011) == UVHTTP_OK);
-        app_path( bat_file, UVHTTP_ARRAY_SIZE(bat_file), "..\\..\\..\\tools\\test02.bat");
+        app_path( bat_file, UVHTTP_ARRAY_SIZE(bat_file), "..\\..\\..\\tools\\test03.bat");
         runptr = run_shell( bat_file);
         uvhttp_run( loop);
         uvhttp_server_delete( server);
@@ -145,28 +148,13 @@ void do_test02(){
         wait_run( runptr);
         TEST_EQ( uvhttp_server_session_new_called);
         TEST_EQ( uvhttp_session_request_called);
-        TEST_EQ( uvhttp_session_body_read_called);
+        TEST_EQ( uvhttp_session_body_read_called != 0);
         TEST_EQ( uvhttp_session_request_end_called);
         TEST_EQ( uvhttp_session_end_called);
         TEST_EQ( uvhttp_server_end_called);
         TEST_EQ( uvhttp_session_write_called);
-        TEST_EQ( strcmp( request_body, "test=123") == 0);
-        if ( request_body) {
-            free_string_buffer( request_body);
-        }
-
-        //检测服务器返回结果是否正确
-        app_path( result_file, UVHTTP_ARRAY_SIZE(result_file), "..\\..\\..\\tools\\test02.txt");
-        test_file = fopen( result_file, "r");
-        fseek( test_file, 0,  SEEK_END);
-        test_file_size = ftell( test_file);
-        TEST_EQ( test_file_size == 12);
-        fseek( test_file, 0,  SEEK_SET);
-        fread( result, 1, test_file_size, test_file);
-        fclose( test_file);
-        del_file( result_file);
-        TEST_EQ( strcmp( result, "Hello World\n") == 0);
+        TEST_EQ( request_count == 1000);
     }
 
-    printf( "TEST: uvhttp_server end\n");
+    printf( "TEST: end\n");
 }

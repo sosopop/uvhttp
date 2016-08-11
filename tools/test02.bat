@@ -1,1 +1,1 @@
-curl.exe -d "test=123" "http://127.0.0.1:8011/test02.txt" --output "%~dp0test02.txt"
+"%~dp0curl.exe" -d "test=123" "http://127.0.0.1:8011/test02.txt" --output "%~dp0test02.txt"
