@@ -28,9 +28,6 @@ static void session_writed(
     TEST_EQ( status == 0);
     uvhttp_session_write_called = 1;
     request_count ++;
-    if ( request_count == 1000) {
-        uvhttp_session_abort( session);
-    }
 }
 
 static void uvhttp_session_request(
@@ -148,12 +145,12 @@ void do_test03(){
         wait_run( runptr);
         TEST_EQ( uvhttp_server_session_new_called);
         TEST_EQ( uvhttp_session_request_called);
-        TEST_EQ( uvhttp_session_body_read_called != 0);
+        TEST_EQ( uvhttp_session_body_read_called == 0);
         TEST_EQ( uvhttp_session_request_end_called);
         TEST_EQ( uvhttp_session_end_called);
         TEST_EQ( uvhttp_server_end_called);
         TEST_EQ( uvhttp_session_write_called);
-        TEST_EQ( request_count == 1000);
+        TEST_EQ( request_count == 100);
     }
 
     printf( "TEST: end\n");

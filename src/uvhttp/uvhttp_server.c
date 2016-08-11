@@ -514,6 +514,7 @@ static void session_reset(
 
         if ( session_obj->request.headers) {
             uvhttp_headers_free( session_obj->request.headers);
+            session_obj->request.headers = 0;
         }
     }
 

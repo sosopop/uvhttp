@@ -22,8 +22,10 @@ void run_thread(
     {
         CloseHandle( pi.hThread);
         WaitForSingleObject( pi.hProcess, INFINITE);
+        CloseHandle( pi.hProcess);
     }
     free(param);
+    _endthreadex(0);
 }
 
 void* run_shell( const char* cmd)
