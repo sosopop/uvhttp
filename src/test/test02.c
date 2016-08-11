@@ -163,7 +163,8 @@ void do_test02(){
         TEST_EQ( test_file_size == 12);
         fseek( test_file, 0,  SEEK_SET);
         fread( result, 1, test_file_size, test_file);
-
+        fclose( test_file);
+        del_file( result_file);
         TEST_EQ( strcmp( result, "Hello World\n") == 0);
     }
 

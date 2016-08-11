@@ -14,4 +14,5 @@
 void app_path( char* path, unsigned int path_size, const char* path_append);
 void* run_shell( const char* cmd);
 void wait_run( void* shellptr);
+void del_file( const char* path);
 #endif // TEST_UTIL_H__

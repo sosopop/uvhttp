@@ -50,3 +50,8 @@ void app_path( char* path, unsigned int path_size, const char* path_append)
     PathAppend( path, path_append);
 #endif
 }
+
+void del_file( const char* path )
+{
+    DeleteFile( path);
+}
