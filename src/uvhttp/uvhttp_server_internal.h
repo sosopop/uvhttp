@@ -26,6 +26,7 @@ struct uvhttp_server_obj {
     uvhttp_server_session_new_callback session_new_callback;
     uvhttp_server_end_callback end_callback;
     unsigned char deleted:1;
+    unsigned char ssl:1;
     unsigned char status:7;
 } ;
 

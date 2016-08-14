@@ -1,6 +1,7 @@
 #include "uvhttp_server.h"
 #include "uvhttp_base.h"
 #include "uvhttp_server_internal.h"
+#include "uvhttp_ssl.h"
 #include <stdarg.h>
 
 static void server_session_connected(
@@ -57,6 +58,8 @@ int uvhttp_server_set_option(
     case UVHTTP_SRV_OPT_END_CB:
         server_obj->end_callback = va_arg(ap, uvhttp_server_end_callback);
         break;
+    case UVHTTP_SRV_OPT_SSL:
+        server_obj->ssl = va_arg( ap, unsigned char);
     default:
         ret = UVHTTP_ERROR_NOOPTIONS;
         break;
@@ -186,6 +189,31 @@ uvhttp_server uvhttp_server_new(
     return server_obj;
 }
 
+static int uvhttp_listen( 
+    uv_stream_t* stream,
+    int backlog, 
+    uv_connection_cb cb
+    )
+{
+}
+
+static int uvhttp_read_start(
+    uv_stream_t* stream,
+    uv_alloc_cb alloc_cb,
+    uv_read_cb read_cb
+    )
+{
+}
+
+static int uvhttp_write(
+    uv_write_t* req,
+    uv_stream_t* handle,
+    const uv_buf_t bufs[],
+    unsigned int nbufs,
+    uv_write_cb cb)
+{
+}
+
 int uvhttp_server_ip4_listen(
     uvhttp_server server,
     const char* ip,
@@ -222,6 +250,11 @@ static void server_session_connected(
     int ret = 0;
     struct uvhttp_server_obj* server_obj = 0;
     struct uvhttp_session_obj* session_obj = 0;
+
+    if ( status != 0) {
+        ret = UVHTTP_ERROR_FAILED;
+        goto cleanup;
+    }
 
     server_obj = (struct uvhttp_server_obj*)stream->data;
     session_obj = (struct uvhttp_session_obj*)malloc( sizeof(struct uvhttp_session_obj));

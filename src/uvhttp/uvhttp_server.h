@@ -12,6 +12,7 @@ typedef void* uvhttp_session;
 
 typedef enum {
     UVHTTP_SRV_OPT_USER_DATA,
+    UVHTTP_SRV_OPT_SSL,
     UVHTTP_SRV_OPT_SESSION_NEW_CB,
     UVHTTP_SRV_OPT_END_CB
 } uvhttp_server_option;
