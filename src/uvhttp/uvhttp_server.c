@@ -189,31 +189,6 @@ uvhttp_server uvhttp_server_new(
     return server_obj;
 }
 
-static int uvhttp_listen( 
-    uv_stream_t* stream,
-    int backlog, 
-    uv_connection_cb cb
-    )
-{
-}
-
-static int uvhttp_read_start(
-    uv_stream_t* stream,
-    uv_alloc_cb alloc_cb,
-    uv_read_cb read_cb
-    )
-{
-}
-
-static int uvhttp_write(
-    uv_write_t* req,
-    uv_stream_t* handle,
-    const uv_buf_t bufs[],
-    unsigned int nbufs,
-    uv_write_cb cb)
-{
-}
-
 int uvhttp_server_ip4_listen(
     uvhttp_server server,
     const char* ip,
@@ -222,7 +197,8 @@ int uvhttp_server_ip4_listen(
 {
     struct sockaddr_in addr;
     struct uvhttp_server_obj* server_obj = (struct uvhttp_server_obj*)server;
-    int ret = uv_tcp_init( server_obj->loop, server_obj->tcp);
+    int ret = 0;
+    ret = uv_tcp_init( server_obj->loop, server_obj->tcp);
     if ( ret != 0)
         goto cleanup;
     server_obj->status = UVHTTP_SRV_STATUS_RUNNING;
@@ -259,18 +235,30 @@ static void server_session_connected(
     server_obj = (struct uvhttp_server_obj*)stream->data;
     session_obj = (struct uvhttp_session_obj*)malloc( sizeof(struct uvhttp_session_obj));
     memset( session_obj, 0, sizeof(struct uvhttp_session_obj));
-    session_obj->tcp = (uv_tcp_t*)malloc( sizeof(uv_tcp_t) );
-    memset( session_obj->tcp, 0, sizeof(uv_tcp_t)); 
-    session_obj->tcp->data = session_obj;
 
     http_parser_init( &session_obj->parser, HTTP_REQUEST);
     session_obj->server_obj = server_obj;
     session_obj->loop = server_obj->loop;
 
-    ret = uv_tcp_init( session_obj->loop, session_obj->tcp);
-    if ( ret != 0) {
-        session_delete( session_obj);
-        return;
+    if ( server_obj->ssl ) {
+        session_obj->tcp = (uv_tcp_t*)malloc( sizeof(struct uvhttp_ssl) );
+        memset( session_obj->tcp, 0, sizeof(struct uvhttp_ssl)); 
+        session_obj->tcp->data = session_obj;
+        ret = uvhttp_ssl_init( session_obj->loop, session_obj->tcp);
+        if ( ret != 0) {
+            session_delete( session_obj);
+            return;
+        }
+    }
+    else {
+        session_obj->tcp = (uv_tcp_t*)malloc( sizeof(uv_tcp_t) );
+        memset( session_obj->tcp, 0, sizeof(uv_tcp_t)); 
+        session_obj->tcp->data = session_obj;
+        ret = uv_tcp_init( session_obj->loop, session_obj->tcp);
+        if ( ret != 0) {
+            session_delete( session_obj);
+            return;
+        }
     }
     ret = uv_tcp_nodelay( session_obj->tcp, 1);
     if ( ret != 0)
@@ -278,9 +266,16 @@ static void server_session_connected(
     ret = uv_accept( stream, (uv_stream_t*)session_obj->tcp);
     if ( ret != 0)
         goto cleanup;
-    ret = uv_read_start((uv_stream_t*)session_obj->tcp, session_data_alloc, session_data_read);
-    if ( ret != 0)
-        goto cleanup;
+    if ( server_obj->ssl ) {
+        ret = uvhttp_ssl_read_start((uv_stream_t*)session_obj->tcp, session_data_alloc, session_data_read);
+        if ( ret != 0)
+            goto cleanup;
+    }
+    else {
+        ret = uv_read_start((uv_stream_t*)session_obj->tcp, session_data_alloc, session_data_read);
+        if ( ret != 0)
+            goto cleanup;
+    }
 
     if ( server_obj->session_new_callback) {
         server_obj->session_new_callback( server_obj, session_obj);

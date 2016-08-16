@@ -15,6 +15,7 @@
     <ClCompile Include="..\..\src\uvhttp\uvhttp_base.c" />
     <ClCompile Include="..\..\src\uvhttp\uvhttp_client.c" />
     <ClCompile Include="..\..\src\uvhttp\uvhttp_server.c" />
+    <ClCompile Include="..\..\src\uvhttp\uvhttp_ssl.c" />
     <ClCompile Include="..\..\src\uvhttp\uvhttp_util.c" />
   </ItemGroup>
   <ItemGroup>
@@ -26,6 +27,7 @@
     <ClInclude Include="..\..\src\uvhttp\uvhttp_server_internal.h" />
     <ClInclude Include="..\..\src\uvhttp\uvhttp.h" />
     <ClInclude Include="..\..\src\uvhttp\uvhttp_server.h" />
+    <ClInclude Include="..\..\src\uvhttp\uvhttp_ssl.h" />
     <ClInclude Include="..\..\src\uvhttp\uvhttp_util.h" />
   </ItemGroup>
   <ItemGroup>
@@ -80,7 +82,7 @@
       <PreprocessorDefinitions>WIN32;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <CompileAs>CompileAsC</CompileAs>
-      <AdditionalIncludeDirectories>../../src/libuv/include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../src/libuv/include;../../src/mbedtls/include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -98,7 +100,7 @@
       <PreprocessorDefinitions>WIN32;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <CompileAs>CompileAsC</CompileAs>
-      <AdditionalIncludeDirectories>../../src/libuv/include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../src/libuv/include;../../src/mbedtls/include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
