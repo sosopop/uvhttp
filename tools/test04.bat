@@ -1,0 +1,1 @@
+"%~dp0curl.exe" -k -d "test=123" "https://127.0.0.1:8011/test04.txt" --output "%~dp0test04.txt"

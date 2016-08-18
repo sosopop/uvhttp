@@ -6,7 +6,6 @@
 extern "C" {
 #endif
 
-#define UVHTTP_MAX_HEADERS_SIZE 40
 typedef void* uvhttp_loop;
 
 typedef enum {

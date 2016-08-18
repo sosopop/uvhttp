@@ -49,7 +49,7 @@ static void uvhttp_session_request(
         }
     }
 
-    TEST_EQ( strcmp( request->uri, "/test02.txt") == 0);
+    TEST_EQ( strcmp( request->uri, "/test04.txt") == 0);
     TEST_EQ( find_host);
     uvhttp_session_request_called = 1;
 }
@@ -138,7 +138,7 @@ void do_test04(){
         uvhttp_server_set_option( server, UVHTTP_SRV_OPT_END_CB, uvhttp_server_end);
         uvhttp_server_set_option( server, UVHTTP_SRV_OPT_SESSION_NEW_CB, uvhttp_server_session_new);
         TEST_EQ( uvhttp_server_ip4_listen( server, "0.0.0.0", 8011) == UVHTTP_OK);
-        app_path( bat_file, UVHTTP_ARRAY_SIZE(bat_file), "..\\..\\..\\tools\\test02.bat");
+        app_path( bat_file, UVHTTP_ARRAY_SIZE(bat_file), "..\\..\\..\\tools\\test04.bat");
         runptr = run_shell( bat_file);
         uvhttp_run( loop);
         uvhttp_server_delete( server);
@@ -157,7 +157,7 @@ void do_test04(){
         }
 
         //检测服务器返回结果是否正确
-        app_path( result_file, UVHTTP_ARRAY_SIZE(result_file), "..\\..\\..\\tools\\test02.txt");
+        app_path( result_file, UVHTTP_ARRAY_SIZE(result_file), "..\\..\\..\\tools\\test04.txt");
         test_file = fopen( result_file, "r");
         fseek( test_file, 0,  SEEK_END);
         test_file_size = ftell( test_file);
