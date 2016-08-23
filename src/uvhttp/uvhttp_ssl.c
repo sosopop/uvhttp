@@ -1,5 +1,6 @@
 #include "uvhttp_ssl.h"
 #include "mbedtls/certs.h"
+#include "uvhttp_base.h"
 
 
 static void uvhttp_ssl_read_cb(
@@ -228,7 +229,28 @@ int uvhttp_ssl_write(uv_write_t* req,
     uv_write_cb cb)
 {
     int ret = 0;
-
+    struct uvhttp_ssl* ssl = (struct uvhttp_ssl*)handle;
+    if ( ssl->is_writing ) {
+        ret = UVHTTP_ERROR_WRITE_WAIT;
+        goto cleanup;
+    }
+    ssl->ssl_write_cb = cb;
+    ssl->ssl_write_bufs = (uv_buf_t*)malloc( sizeof(uv_buf_t)*nbufs);
+    memcpy( ssl->ssl_write_bufs, bufs, sizeof(uv_buf_t)*nbufs);
+    ssl->ssl_write_nbufs = nbufs;
+    ssl->ssl_write_index = 0;
+    if ( mbedtls_ssl_write( &ssl->ssl, (const unsigned char *)ssl->ssl_write_bufs[0].base, 
+        ssl->ssl_write_bufs[0].len ) == MBEDTLS_ERR_SSL_WANT_WRITE ) {
+        ssl->is_writing = 1;
+        goto cleanup;
+    }
+cleanup:
+    if ( ret != UVHTTP_OK) {
+        if ( ssl->ssl_write_bufs) {
+            free( ssl->ssl_write_bufs);
+            ssl->ssl_write_bufs = 0;
+        }
+    }
     return ret;
 }
 
@@ -244,6 +266,10 @@ static void uvhttp_ssl_close_cb(
     mbedtls_ctr_drbg_free( &ssl->ctr_drbg );
     mbedtls_entropy_free( &ssl->entropy );
     ssl->user_close_cb( handle);
+    if ( ssl->ssl_write_bufs) {
+        free( ssl->ssl_write_bufs);
+        ssl->ssl_write_bufs = 0;
+    }
 }
 
 void uvhttp_ssl_close(

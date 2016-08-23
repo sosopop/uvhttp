@@ -664,9 +664,17 @@ int uvhttp_session_write(
     write_req->user_data = user_data;
     write_req->session = session;
     write_req->write_callback = write_callback;
-    ret = uv_write( &write_req->write_req, (uv_stream_t*)session_obj->tcp, &write_buffer, 1, session_write_callback);
-    if ( ret != UVHTTP_OK) {
-        free( write_req);
+    if( session_obj->server_obj->ssl ) {
+        ret = uv_write( &write_req->write_req, (uv_stream_t*)session_obj->tcp, &write_buffer, 1, session_write_callback);
+        if ( ret != UVHTTP_OK) {
+            free( write_req);
+        }
+    }
+    else {
+        ret = uvhttp_ssl_write( &write_req->write_req, (uv_stream_t*)session_obj->tcp, &write_buffer, 1, session_write_callback);
+        if ( ret != UVHTTP_OK) {
+            free( write_req);
+        }
     }
     return ret;
 }

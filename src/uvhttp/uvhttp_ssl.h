@@ -19,6 +19,11 @@ struct uvhttp_ssl {
     char ssl_read_buffer[UVHTTP_NET_BUFFER_SIZE];
     int ssl_read_buffer_len;
     int ssl_read_buffer_offset;
+    int ssl_write_index;
+    uv_buf_t* ssl_write_bufs;
+    unsigned int ssl_write_nbufs;
+    uv_write_cb ssl_write_cb;
+    char is_writing;
     mbedtls_pk_context key;
     mbedtls_entropy_context entropy;
     mbedtls_ctr_drbg_context ctr_drbg;
