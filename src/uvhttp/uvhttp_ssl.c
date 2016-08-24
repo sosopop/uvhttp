@@ -109,7 +109,47 @@ static void ssl_write_cb(
     int status
     )
 {
-    free( req->data);
+    int ret = 0;
+    struct uvhttp_ssl* ssl = (struct uvhttp_ssl*)req->data;
+    //握手状态
+    if ( ssl->ssl.state == MBEDTLS_SSL_HANDSHAKE_OVER ) {
+        ret = mbedtls_ssl_handshake_step( &ssl->ssl );
+        if ( ret != 0 && ret != MBEDTLS_ERR_SSL_WANT_WRITE && ret != MBEDTLS_ERR_SSL_WANT_READ) {
+            ssl->user_write_cb( ssl->user_req,  -1);
+        }
+    }
+    else {
+    //传输状态
+        ret = mbedtls_ssl_write( &ssl->ssl,
+            (const unsigned char *)ssl->ssl_write_bufs[ssl->ssl_write_index].base + ssl->ssl_write_offset, 
+            ssl->ssl_write_bufs[ssl->ssl_write_index].len - ssl->ssl_write_offset
+            );
+        if ( ret == MBEDTLS_ERR_SSL_WANT_WRITE ) {
+            goto cleanup;
+        }
+        else if ( ret > 0 ) {
+            //写入下一个buffer
+            ssl->ssl_write_offset += ret;
+            if ( ssl->ssl_write_offset == ssl->ssl_write_bufs[ssl->ssl_write_index].len) {
+                if ( ssl->ssl_write_index != ssl->ssl_write_nbufs - 1) {
+                    ssl->ssl_write_index ++;
+                    ret = mbedtls_ssl_write( &ssl->ssl,
+                        (const unsigned char *)ssl->ssl_write_bufs[ssl->ssl_write_index].base + ssl->ssl_write_offset, 
+                        ssl->ssl_write_bufs[ssl->ssl_write_index].len - ssl->ssl_write_offset
+                        );
+                }
+                else {
+                    //写入完成回调
+                    ssl->user_write_cb( ssl->user_req,  0);
+                }
+            }
+        }
+        else {
+            ssl->user_write_cb( ssl->user_req,  -1);
+        }
+    }
+cleanup:
+    free( ssl->write_buffer.base);
     free( req);
 }
 
@@ -122,14 +162,33 @@ static int ssl_send(
     struct uvhttp_ssl* ssl = (struct uvhttp_ssl*)ctx;
     uv_write_t* write_req = (uv_write_t*)malloc(sizeof(uv_write_t));
     int ret = 0;
-    uv_buf_t write_buffer;
-    write_buffer.base = (char*)malloc( len );
-    memcpy( write_buffer.base, buf, len);
-    write_buffer.len = len;
-    write_req->data = write_buffer.base;
-    ret = uv_write( write_req, (uv_stream_t*)ssl, &write_buffer, 1, ssl_write_cb);
+    ssl->write_buffer.base = 0;
+    ssl->write_buffer.len = 0;
+
+    if ( ssl->is_async_writing == 0 ) {
+        ssl->write_buffer.base = (char*)malloc( len );
+        memcpy( ssl->write_buffer.base, buf, len);
+        ssl->write_buffer.len = len;
+        write_req->data = ssl;
+        ret = uv_write( write_req, (uv_stream_t*)ssl, &ssl->write_buffer, 1, ssl_write_cb);
+        if ( ret != 0) {
+            goto cleanup;
+        }
+        len = MBEDTLS_ERR_SSL_WANT_WRITE;
+        ssl->is_async_writing = 1;
+    }
+    else {
+        ssl->is_async_writing = 0;
+    }
+cleanup:
     if ( ret != 0) {
-        free( write_req);
+        if ( write_req) {
+            free( write_req);
+        }
+        if ( ssl->write_buffer.base) {
+            free( ssl->write_buffer.base);
+        }
+        len = MBEDTLS_ERR_SSL_UNEXPECTED_RECORD;
     }
     return len;
 }
@@ -234,7 +293,8 @@ int uvhttp_ssl_write(uv_write_t* req,
         ret = UVHTTP_ERROR_WRITE_WAIT;
         goto cleanup;
     }
-    ssl->ssl_write_cb = cb;
+    ssl->user_req = req;
+    ssl->user_write_cb = cb;
     ssl->ssl_write_bufs = (uv_buf_t*)malloc( sizeof(uv_buf_t)*nbufs);
     memcpy( ssl->ssl_write_bufs, bufs, sizeof(uv_buf_t)*nbufs);
     ssl->ssl_write_nbufs = nbufs;
@@ -242,7 +302,6 @@ int uvhttp_ssl_write(uv_write_t* req,
     if ( mbedtls_ssl_write( &ssl->ssl, (const unsigned char *)ssl->ssl_write_bufs[0].base, 
         ssl->ssl_write_bufs[0].len ) == MBEDTLS_ERR_SSL_WANT_WRITE ) {
         ssl->is_writing = 1;
-        goto cleanup;
     }
 cleanup:
     if ( ret != UVHTTP_OK) {
