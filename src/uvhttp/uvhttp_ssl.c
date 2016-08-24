@@ -112,7 +112,7 @@ static void ssl_write_cb(
     int ret = 0;
     struct uvhttp_ssl* ssl = (struct uvhttp_ssl*)req->data;
     //ÎÕÊÖ×´Ì¬
-    if ( ssl->ssl.state == MBEDTLS_SSL_HANDSHAKE_OVER ) {
+    if ( ssl->ssl.state != MBEDTLS_SSL_HANDSHAKE_OVER ) {
         ret = mbedtls_ssl_handshake_step( &ssl->ssl );
         if ( ret != 0 && ret != MBEDTLS_ERR_SSL_WANT_WRITE && ret != MBEDTLS_ERR_SSL_WANT_READ) {
             goto cleanup;
