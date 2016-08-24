@@ -115,7 +115,7 @@ static void ssl_write_cb(
     if ( ssl->ssl.state == MBEDTLS_SSL_HANDSHAKE_OVER ) {
         ret = mbedtls_ssl_handshake_step( &ssl->ssl );
         if ( ret != 0 && ret != MBEDTLS_ERR_SSL_WANT_WRITE && ret != MBEDTLS_ERR_SSL_WANT_READ) {
-            ssl->user_write_cb( ssl->user_req,  -1);
+            goto cleanup;
         }
     }
     else {
