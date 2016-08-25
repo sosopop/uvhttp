@@ -1,5 +1,6 @@
 #include "uvhttp_ssl.h"
 #include "mbedtls/certs.h"
+#include "mbedtls/debug.h"
 #include "uvhttp_base.h"
 
 
@@ -28,7 +29,7 @@ static void uvhttp_ssl_read_cb(
         }
         ssl->ssl_read_buffer_len = 0;
         ssl->ssl_read_buffer_offset = 0;
-        if ( ret != MBEDTLS_SSL_HANDSHAKE_OVER && ret != MBEDTLS_ERR_SSL_WANT_READ && ret != MBEDTLS_ERR_SSL_WANT_WRITE) {
+        if ( ret != 0 && ret != MBEDTLS_ERR_SSL_WANT_READ && ret != MBEDTLS_ERR_SSL_WANT_WRITE) {
             nread = -1;
             goto cleanup;
         }
@@ -40,8 +41,8 @@ static void uvhttp_ssl_read_cb(
         ssl->ssl_read_buffer_offset = 0;
 
         //可能本次由于没有读取到一个完整的块，导致一点数据也不返回。
-        while(read_len = mbedtls_ssl_read( &ssl->ssl, 
-            (unsigned char *)ssl->user_read_buf.base,  ssl->user_read_buf.len) > 0) {
+        while((read_len = mbedtls_ssl_read( &ssl->ssl, 
+            (unsigned char *)ssl->user_read_buf.base,  ssl->user_read_buf.len)) > 0) {
             ssl->user_read_cb( stream, read_len, &ssl->user_read_buf);
         }
         if ( read_len !=0 && read_len != MBEDTLS_ERR_SSL_WANT_READ) {
@@ -113,10 +114,14 @@ static void ssl_write_cb(
     struct uvhttp_ssl* ssl = (struct uvhttp_ssl*)req->data;
     //握手状态
     if ( ssl->ssl.state != MBEDTLS_SSL_HANDSHAKE_OVER ) {
-        ret = mbedtls_ssl_handshake_step( &ssl->ssl );
-        if ( ret != 0 && ret != MBEDTLS_ERR_SSL_WANT_WRITE && ret != MBEDTLS_ERR_SSL_WANT_READ) {
-            goto cleanup;
-        }
+		while ( (ret = mbedtls_ssl_handshake_step( &ssl->ssl )) == 0) {
+			if ( ssl->ssl.state == MBEDTLS_SSL_HANDSHAKE_OVER){
+				break;
+			}
+		}
+		if ( ret != 0 && ret != MBEDTLS_ERR_SSL_WANT_WRITE && ret != MBEDTLS_ERR_SSL_WANT_READ) {
+			goto cleanup;
+		}
     }
     else {
     //传输状态
@@ -193,6 +198,21 @@ cleanup:
     return len;
 }
 
+static void my_debug( void *ctx, int level,
+	const char *file, int line,
+	const char *str )
+{
+	const char *p, *basename;
+
+	/* Extract basename from file */
+	for( p = basename = file; *p != '\0'; p++ )
+		if( *p == '/' || *p == '\\' )
+			basename = p + 1;
+
+	mbedtls_fprintf( (FILE *) ctx, "%s:%04d: |%d| %s", basename, line, level, str );
+	fflush(  (FILE *) ctx  );
+}
+
 int uvhttp_ssl_init(
     uv_loop_t* loop,
     uv_tcp_t* handle
@@ -245,8 +265,8 @@ int uvhttp_ssl_init(
         goto cleanup;
     }
     mbedtls_ssl_conf_rng( &ssl->conf, mbedtls_ctr_drbg_random, &ssl->ctr_drbg );
-    //mbedtls_ssl_conf_dbg( &clt->ssl_ctx->conf, my_debug, stdout );
-    //mbedtls_debug_set_threshold( 1 );
+    mbedtls_ssl_conf_dbg( &ssl->conf, my_debug, stdout );
+    mbedtls_debug_set_threshold( 1 );
 
     if( ( ret = mbedtls_ssl_setup( &ssl->ssl, &ssl->conf ) ) != 0 ) {
         goto cleanup;
