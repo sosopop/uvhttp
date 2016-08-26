@@ -265,8 +265,8 @@ int uvhttp_ssl_init(
         goto cleanup;
     }
     mbedtls_ssl_conf_rng( &ssl->conf, mbedtls_ctr_drbg_random, &ssl->ctr_drbg );
-    mbedtls_ssl_conf_dbg( &ssl->conf, my_debug, stdout );
-    mbedtls_debug_set_threshold( 1 );
+//     mbedtls_ssl_conf_dbg( &ssl->conf, my_debug, stdout );
+//     mbedtls_debug_set_threshold( 1 );
 
     if( ( ret = mbedtls_ssl_setup( &ssl->ssl, &ssl->conf ) ) != 0 ) {
         goto cleanup;

@@ -81,6 +81,7 @@ int main(int argc, char* argv[])
     if ( loop) {
         uvhttp_server server = uvhttp_server_new( loop);
         if ( server) {
+            uvhttp_server_set_option( server, UVHTTP_SRV_OPT_SSL, 1);
             uvhttp_server_set_option( server, UVHTTP_SRV_OPT_SESSION_NEW_CB, uvhttp_server_session_new);
             if ( uvhttp_server_ip4_listen( server, "0.0.0.0", 8011) == UVHTTP_OK) {
             }
