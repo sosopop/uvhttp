@@ -7,6 +7,7 @@ extern void do_test01();
 extern void do_test02();
 extern void do_test03();
 extern void do_test04();
+extern void do_test05();
 
 int main(int argc, char* argv[])
 {
@@ -14,6 +15,7 @@ int main(int argc, char* argv[])
     do_test02();
     do_test03();
     do_test04();
+    do_test05();
 #if defined(_MSC_VER) || defined(__MINGW64_VERSION_MAJOR)
     TEST_EQ( _CrtDumpMemoryLeaks() == 0);
 #endif

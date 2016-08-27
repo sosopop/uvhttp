@@ -44,7 +44,7 @@ struct uvhttp_ssl_session_write_request {
     char is_async_writing;
     char is_writing;
     uv_buf_t write_buffer;
-    uvhttp_ssl_session* session;
+    struct uvhttp_ssl_session* session;
 };
 
 struct uvhttp_ssl_server {
