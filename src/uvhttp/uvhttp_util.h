@@ -2,7 +2,9 @@
 #define UVHTTP_UTIL_H__
 
 #include <stdlib.h>
+#if defined(_MSC_VER) || defined(__MINGW64_VERSION_MAJOR)
 #include <crtdbg.h>
+#endif
 
 #if defined(__cplusplus)
 extern "C" {

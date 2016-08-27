@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
+#if defined(_MSC_VER) || defined(__MINGW64_VERSION_MAJOR)
 #include <crtdbg.h>
+#endif
 #include "uvhttp.h"
 //#define OUTPUT_DEUBGINFO
 
@@ -50,7 +52,7 @@ void session_writed(
     void* user_data
     )
 {
-    uvhttp_session_abort( session);
+    //uvhttp_session_abort( session);
 }
 
 static void uvhttp_session_request_end(
@@ -109,6 +111,8 @@ int main(int argc, char* argv[])
         uvhttp_server_delete( server);
         uvhttp_loop_delete( loop);
     }
+#if defined(_MSC_VER) || defined(__MINGW64_VERSION_MAJOR)
     _CrtDumpMemoryLeaks(); 
+#endif
     return 0;
 }

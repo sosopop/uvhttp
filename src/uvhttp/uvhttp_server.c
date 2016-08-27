@@ -1,7 +1,7 @@
 #include "uvhttp_server.h"
 #include "uvhttp_base.h"
 #include "uvhttp_server_internal.h"
-#include "uvhttp_ssl.h"
+#include "uvhttp_ssl_server.h"
 #include <stdarg.h>
 
 static void server_session_connected(
@@ -181,9 +181,6 @@ uvhttp_server uvhttp_server_new(
         sizeof(struct uvhttp_server_obj) );
 
     memset( server_obj, 0, sizeof(struct uvhttp_server_obj));
-    server_obj->tcp = (uv_tcp_t*)malloc( sizeof(uv_tcp_t) );
-    memset( server_obj->tcp, 0, sizeof(uv_tcp_t));
-    server_obj->tcp->data = server_obj;
     server_obj->loop = (uv_loop_t*)loop;
 
     return server_obj;
@@ -198,7 +195,22 @@ int uvhttp_server_ip4_listen(
     struct sockaddr_in addr;
     struct uvhttp_server_obj* server_obj = (struct uvhttp_server_obj*)server;
     int ret = 0;
-    ret = uv_tcp_init( server_obj->loop, server_obj->tcp);
+    if ( server_obj->ssl) {
+        if ( !server_obj->tcp) {
+            server_obj->tcp = (uv_tcp_t*)malloc( sizeof(struct uvhttp_ssl_server) );
+            memset( server_obj->tcp, 0, sizeof(struct uvhttp_ssl_server));
+        }
+        server_obj->tcp->data = server_obj;
+        ret = uvhttp_ssl_server_init( server_obj->loop, server_obj->tcp);
+    }
+    else {
+        if ( !server_obj->tcp) {
+            server_obj->tcp = (uv_tcp_t*)malloc( sizeof(uv_tcp_t) );
+            memset( server_obj->tcp, 0, sizeof(uv_tcp_t));
+        }
+        server_obj->tcp->data = server_obj;
+        ret = uv_tcp_init( server_obj->loop, server_obj->tcp );
+    }
     if ( ret != 0)
         goto cleanup;
     server_obj->status = UVHTTP_SRV_STATUS_RUNNING;
@@ -241,10 +253,10 @@ static void server_session_connected(
     session_obj->loop = server_obj->loop;
 
     if ( server_obj->ssl ) {
-        session_obj->tcp = (uv_tcp_t*)malloc( sizeof(struct uvhttp_ssl) );
-        memset( session_obj->tcp, 0, sizeof(struct uvhttp_ssl)); 
+        session_obj->tcp = (uv_tcp_t*)malloc( sizeof(struct uvhttp_ssl_session) );
+        memset( session_obj->tcp, 0, sizeof(struct uvhttp_ssl_session)); 
         session_obj->tcp->data = session_obj;
-        ret = uvhttp_ssl_init( session_obj->loop, session_obj->tcp);
+        ret = uvhttp_ssl_session_init( session_obj->loop, session_obj->tcp, server_obj->tcp);
         if ( ret != 0) {
             session_delete( session_obj);
             return;
@@ -267,7 +279,7 @@ static void server_session_connected(
     if ( ret != 0)
         goto cleanup;
     if ( server_obj->ssl ) {
-        ret = uvhttp_ssl_read_start((uv_stream_t*)session_obj->tcp, session_data_alloc, session_data_read);
+        ret = uvhttp_ssl_read_session_start((uv_stream_t*)session_obj->tcp, session_data_alloc, session_data_read);
         if ( ret != 0)
             goto cleanup;
     }
@@ -521,7 +533,7 @@ static void session_close(
 {
     if ( uv_is_closing( (uv_handle_t*)session_obj->tcp) == 0) {
         if ( session_obj->server_obj->ssl) {
-            uvhttp_ssl_close( (uv_handle_t*)session_obj->tcp, session_closed);
+            uvhttp_ssl_session_close( (uv_handle_t*)session_obj->tcp, session_closed);
         }
         else {
             uv_close( (uv_handle_t*)session_obj->tcp, session_closed);
@@ -632,8 +644,14 @@ static void server_close(
     struct uvhttp_server_obj* server
     )
 {
-    if ( uv_is_closing( (uv_handle_t*)server->tcp) == 0)
-        uv_close( (uv_handle_t*)server->tcp, server_closed);
+    if ( uv_is_closing( (uv_handle_t*)server->tcp) == 0){
+        if ( server->ssl) {
+            uvhttp_ssl_server_close( (uv_handle_t*)server->tcp, server_closed);
+        }
+        else {
+            uv_close( (uv_handle_t*)server->tcp, server_closed);
+        }
+    }
 }
 
 int uvhttp_server_abort(
@@ -677,7 +695,7 @@ int uvhttp_session_write(
         }
     }
     else {
-        ret = uvhttp_ssl_write( &write_req->write_req, (uv_stream_t*)session_obj->tcp, &write_buffer, 1, session_write_callback);
+        ret = uvhttp_ssl_session_write( &write_req->write_req, (uv_stream_t*)session_obj->tcp, &write_buffer, 1, session_write_callback);
         if ( ret != UVHTTP_OK) {
             free( write_req);
         }

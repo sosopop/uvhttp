@@ -15,7 +15,7 @@
     <ClCompile Include="..\..\src\uvhttp\uvhttp_base.c" />
     <ClCompile Include="..\..\src\uvhttp\uvhttp_client.c" />
     <ClCompile Include="..\..\src\uvhttp\uvhttp_server.c" />
-    <ClCompile Include="..\..\src\uvhttp\uvhttp_ssl.c" />
+    <ClCompile Include="..\..\src\uvhttp\uvhttp_ssl_server.c" />
     <ClCompile Include="..\..\src\uvhttp\uvhttp_util.c" />
   </ItemGroup>
   <ItemGroup>
@@ -27,7 +27,7 @@
     <ClInclude Include="..\..\src\uvhttp\uvhttp_server_internal.h" />
     <ClInclude Include="..\..\src\uvhttp\uvhttp.h" />
     <ClInclude Include="..\..\src\uvhttp\uvhttp_server.h" />
-    <ClInclude Include="..\..\src\uvhttp\uvhttp_ssl.h" />
+    <ClInclude Include="..\..\src\uvhttp\uvhttp_ssl_server.h" />
     <ClInclude Include="..\..\src\uvhttp\uvhttp_util.h" />
   </ItemGroup>
   <ItemGroup>
