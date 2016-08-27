@@ -92,6 +92,7 @@
     <ClCompile Include="..\..\src\test\test02.c" />
     <ClCompile Include="..\..\src\test\test03.c" />
     <ClCompile Include="..\..\src\test\test04.c" />
+    <ClCompile Include="..\..\src\test\test05.c" />
     <ClCompile Include="..\..\src\test\unittest.c" />
   </ItemGroup>
   <ItemGroup>
