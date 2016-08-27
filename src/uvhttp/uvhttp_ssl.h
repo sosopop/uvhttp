@@ -1,5 +1,7 @@
 #ifndef UVHTTP_SSL_H__
 #define UVHTTP_SSL_H__
+#include <stdlib.h>
+#include <crtdbg.h>
 #include <uv.h>
 #include "mbedtls/config.h"
 #include "mbedtls/platform.h"

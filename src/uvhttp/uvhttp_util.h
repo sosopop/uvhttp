@@ -2,6 +2,7 @@
 #define UVHTTP_UTIL_H__
 
 #include <stdlib.h>
+#include <crtdbg.h>
 
 #if defined(__cplusplus)
 extern "C" {

@@ -1,5 +1,8 @@
 #include <stdio.h>
+#include <stdlib.h>
+#include <crtdbg.h>
 #include "uvhttp.h"
+//#define OUTPUT_DEUBGINFO
 
 static void uvhttp_session_request(
     uvhttp_session session,
@@ -9,13 +12,17 @@ static void uvhttp_session_request(
     struct uvhttp_header* list = request->headers;
     struct uvhttp_header* end = 0;
     struct uvhttp_header* iter = 0;
+#ifdef OUTPUT_DEUBGINFO
     printf( "session request url: %s\n", request->uri);
     printf( "session headers:\n");
+#endif
     iter = uvhttp_headers_begin( list);
     end = uvhttp_headers_end( list);
 
     for ( ; iter !=end ; iter = iter->next ) {
+#ifdef OUTPUT_DEUBGINFO
         printf( "%s: %s\n", iter->field, iter->value);
+#endif
     }
 }
 
@@ -24,7 +31,9 @@ static void uvhttp_session_body_read(
     struct uvhttp_chunk data
     )
 {
+#ifdef OUTPUT_DEUBGINFO
     printf( "request body: %.*s\n", data.len, data.base);
+#endif
 }
 
 #define RESPONSE \
@@ -53,14 +62,21 @@ static void uvhttp_session_request_end(
     response.base = RESPONSE;
     response.len = sizeof(RESPONSE) - 1;
     uvhttp_session_write( session, &response, 0, session_writed);
+#ifdef OUTPUT_DEUBGINFO
     printf( "session request end!\n");
+#endif
 }
 
 static void uvhttp_session_end(
     uvhttp_session session
     )
 {
+    uvhttp_server server = 0;
+    uvhttp_session_get_info( session, UVHTTP_SESSION_INFO_USER_DATA, &server);
+    //uvhttp_server_abort( server);
+#ifdef OUTPUT_DEUBGINFO
     printf( "session end!\n");
+#endif
 }
 
 static void uvhttp_server_session_new(
@@ -72,7 +88,10 @@ static void uvhttp_server_session_new(
     uvhttp_session_set_option( session, UVHTTP_SESSION_OPT_REQUEST_BODY_CB, uvhttp_session_body_read);
     uvhttp_session_set_option( session, UVHTTP_SESSION_OPT_REQUEST_END_CB, uvhttp_session_request_end);
     uvhttp_session_set_option( session, UVHTTP_SESSION_OPT_END_CB, uvhttp_session_end);
+    uvhttp_session_set_option( session, UVHTTP_SESSION_OPT_USER_DATA, server);
+#ifdef OUTPUT_DEUBGINFO
     printf( "new session created!\n");
+#endif
 }
 
 int main(int argc, char* argv[])
@@ -90,5 +109,6 @@ int main(int argc, char* argv[])
         uvhttp_server_delete( server);
         uvhttp_loop_delete( loop);
     }
+    _CrtDumpMemoryLeaks(); 
     return 0;
 }

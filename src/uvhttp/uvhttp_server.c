@@ -519,8 +519,14 @@ static void session_close(
     struct uvhttp_session_obj* session_obj
     )
 {
-    if ( uv_is_closing( (uv_handle_t*)session_obj->tcp) == 0)
-        uv_close( (uv_handle_t*)session_obj->tcp, session_closed);
+    if ( uv_is_closing( (uv_handle_t*)session_obj->tcp) == 0) {
+        if ( session_obj->server_obj->ssl) {
+            uvhttp_ssl_close( (uv_handle_t*)session_obj->tcp, session_closed);
+        }
+        else {
+            uv_close( (uv_handle_t*)session_obj->tcp, session_closed);
+        }
+    }
 }
     
 static void session_reset( 
