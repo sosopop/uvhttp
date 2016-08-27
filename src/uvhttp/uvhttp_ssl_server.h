@@ -34,6 +34,19 @@ struct uvhttp_ssl_session {
     mbedtls_ssl_context ssl;
 };
 
+struct uvhttp_ssl_session_write_request {
+    unsigned int ssl_read_buffer_len;
+    unsigned int ssl_read_buffer_offset;
+    unsigned int ssl_write_index;
+    unsigned int ssl_write_offset;
+    uv_buf_t* ssl_write_bufs;
+    unsigned int ssl_write_nbufs;
+    char is_async_writing;
+    char is_writing;
+    uv_buf_t write_buffer;
+    uvhttp_ssl_session* session;
+};
+
 struct uvhttp_ssl_server {
     uv_tcp_t tcp;
     uv_close_cb user_close_cb;
