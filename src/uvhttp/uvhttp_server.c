@@ -672,6 +672,20 @@ static void session_write_callback(
     free( req);
 }
 
+static int uvhttp_write(
+    uv_write_t* req,
+    uv_stream_t* handle,
+    char* buffer,
+    unsigned int buffer_len,
+    uv_write_cb cb
+    )
+{
+    uv_buf_t buf;
+    buf.base = buffer;
+    buf.len = buffer_len;
+    return uv_write( req, handle, &buf, 1, cb);
+}
+
 int uvhttp_session_write(
     uvhttp_session session,
     struct uvhttp_chunk* buffer,
@@ -682,20 +696,17 @@ int uvhttp_session_write(
     int ret = UVHTTP_OK;
     struct uvhttp_session_obj* session_obj = (struct uvhttp_session_obj*)session;
     struct uvhttp_write_request* write_req = (struct uvhttp_write_request*)malloc( sizeof(struct uvhttp_write_request));
-    uv_buf_t write_buffer;
-    write_buffer.base = buffer->base;
-    write_buffer.len = buffer->len;
     write_req->user_data = user_data;
     write_req->session = session;
     write_req->write_callback = write_callback;
     if( !session_obj->server_obj->ssl ) {
-        ret = uv_write( &write_req->write_req, (uv_stream_t*)session_obj->tcp, &write_buffer, 1, session_write_callback);
+        ret = uvhttp_write( &write_req->write_req, (uv_stream_t*)session_obj->tcp, buffer->base, buffer->len, session_write_callback);
         if ( ret != UVHTTP_OK) {
             free( write_req);
         }
     }
     else {
-        ret = uvhttp_ssl_session_write( &write_req->write_req, (uv_stream_t*)session_obj->tcp, &write_buffer, 1, session_write_callback);
+        ret = uvhttp_ssl_session_write( &write_req->write_req, (uv_stream_t*)session_obj->tcp, buffer->base, buffer->len, session_write_callback);
         if ( ret != UVHTTP_OK) {
             free( write_req);
         }

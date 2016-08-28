@@ -24,10 +24,9 @@ struct uvhttp_ssl_session {
     char ssl_read_buffer[UVHTTP_NET_BUFFER_SIZE];
     unsigned int ssl_read_buffer_len;
     unsigned int ssl_read_buffer_offset;
-    unsigned int ssl_write_index;
     unsigned int ssl_write_offset;
-    uv_buf_t* ssl_write_bufs;
-    unsigned int ssl_write_nbufs;
+    unsigned int ssl_write_buffer_len;
+    char* ssl_write_buffer;
     char is_async_writing;
     char is_writing;
     uv_buf_t write_buffer;
@@ -84,8 +83,8 @@ int uvhttp_ssl_read_session_start(
 int uvhttp_ssl_session_write(
     uv_write_t* req,
     uv_stream_t* handle,
-    const uv_buf_t bufs[],
-    unsigned int nbufs,
+    char* buffer,
+    unsigned int buffer_len,
     uv_write_cb cb
     );
 

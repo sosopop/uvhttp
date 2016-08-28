@@ -134,8 +134,8 @@ static void ssl_write_cb(
     //传输状态
         //需要修改為使用while循環
         ret = mbedtls_ssl_write( &ssl->ssl,
-            (const unsigned char *)ssl->ssl_write_bufs[ssl->ssl_write_index].base + ssl->ssl_write_offset, 
-            ssl->ssl_write_bufs[ssl->ssl_write_index].len - ssl->ssl_write_offset
+            (const unsigned char *)ssl->ssl_write_buffer + ssl->ssl_write_offset, 
+            ssl->ssl_write_buffer_len - ssl->ssl_write_offset
             );
         if ( ret == MBEDTLS_ERR_SSL_WANT_WRITE ) {
             goto cleanup;
@@ -143,43 +143,19 @@ static void ssl_write_cb(
         else if ( ret > 0 ) {
             //写入下一个buffer
             ssl->ssl_write_offset += ret;
-            if ( ssl->ssl_write_offset == ssl->ssl_write_bufs[ssl->ssl_write_index].len) {
-                if ( ssl->ssl_write_index != ssl->ssl_write_nbufs - 1) {
-                    ssl->ssl_write_index ++;
-                    ret = mbedtls_ssl_write( &ssl->ssl,
-                        (const unsigned char *)ssl->ssl_write_bufs[ssl->ssl_write_index].base + ssl->ssl_write_offset, 
-                        ssl->ssl_write_bufs[ssl->ssl_write_index].len - ssl->ssl_write_offset
-                        );
-                }
-                else {
-                    //写入完成回调
-                    ssl->is_writing = 0;
-                    ssl->user_write_cb( ssl->user_req,  0);
-                    if( ssl->ssl_write_bufs){
-                        free( ssl->ssl_write_bufs);
-                        ssl->ssl_write_bufs = 0;
-                        ssl->ssl_write_nbufs = 0;
-                    }
-                }
+            if ( ssl->ssl_write_offset == ssl->ssl_write_buffer_len) {
+                //写入完成回调
+                ssl->is_writing = 0;
+                ssl->user_write_cb( ssl->user_req,  0);
             }
         }
         else {
             ssl->is_writing = 0;
             ssl->user_write_cb( ssl->user_req,  -1);
-            if( ssl->ssl_write_bufs){
-                free( ssl->ssl_write_bufs);
-                ssl->ssl_write_bufs = 0;
-                ssl->ssl_write_nbufs = 0;
-            }
         }
     }
 cleanup:
     if( status != 0){
-        if( ssl->ssl_write_bufs){
-            free( ssl->ssl_write_bufs);
-            ssl->ssl_write_bufs = 0;
-            ssl->ssl_write_nbufs = 0;
-        }
     }
     if ( ssl->write_buffer.base) {
         free( ssl->write_buffer.base);
@@ -349,11 +325,13 @@ int uvhttp_ssl_read_session_start(
     return ret;
 }
 
-int uvhttp_ssl_session_write(uv_write_t* req,
+int uvhttp_ssl_session_write(
+    uv_write_t* req,
     uv_stream_t* handle,
-    const uv_buf_t bufs[],
-    unsigned int nbufs,
-    uv_write_cb cb)
+    char* buffer,
+    unsigned int buffer_len,
+    uv_write_cb cb
+    )
 {
     int ret = 0;
     struct uvhttp_ssl_session* ssl = (struct uvhttp_ssl_session*)handle;
@@ -363,20 +341,14 @@ int uvhttp_ssl_session_write(uv_write_t* req,
     }
     ssl->user_req = req;
     ssl->user_write_cb = cb;
-    ssl->ssl_write_bufs = (uv_buf_t*)malloc( sizeof(uv_buf_t)*nbufs);
-    memcpy( ssl->ssl_write_bufs, bufs, sizeof(uv_buf_t)*nbufs);
-    ssl->ssl_write_nbufs = nbufs;
-    ssl->ssl_write_index = 0;
-    if ( mbedtls_ssl_write( &ssl->ssl, (const unsigned char *)ssl->ssl_write_bufs[0].base, 
-        ssl->ssl_write_bufs[0].len ) == MBEDTLS_ERR_SSL_WANT_WRITE ) {
+    ssl->ssl_write_buffer_len = buffer_len;
+    ssl->ssl_write_buffer = buffer;
+    if ( mbedtls_ssl_write( &ssl->ssl, (const unsigned char *)buffer, 
+        buffer_len ) == MBEDTLS_ERR_SSL_WANT_WRITE ) {
         ssl->is_writing = 1;
     }
 cleanup:
     if ( ret != UVHTTP_OK) {
-        if ( ssl->ssl_write_bufs) {
-            free( ssl->ssl_write_bufs);
-            ssl->ssl_write_bufs = 0;
-        }
     }
     return ret;
 }
@@ -387,10 +359,6 @@ static void uvhttp_ssl_session_close_cb(
 {
     struct uvhttp_ssl_session* ssl = (struct uvhttp_ssl_session*)handle;
     mbedtls_ssl_free( &ssl->ssl );
-    if ( ssl->ssl_write_bufs) {
-        free( ssl->ssl_write_bufs);
-        ssl->ssl_write_bufs = 0;
-    }
     ssl->user_close_cb( handle);
 }
 
