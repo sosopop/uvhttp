@@ -38,14 +38,15 @@ static void uvhttp_session_body_read(
 #endif
 }
 
-#define RESPONSE \
-    "HTTP/1.1 200 OK\r\n" \
-    "Content-Type: text/plain\r\n" \
-    "Content-Length: 11\r\n" \
-    "Connection: keep-alive\r\n" \
-    "\r\n" \
-    "Hello World" 
-    
+ #define RESPONSE \
+     "HTTP/1.1 200 OK\r\n" \
+     "Content-Type: text/plain\r\n" \
+     "Content-Length: 11\r\n" \
+     "Connection: keep-alive\r\n" \
+     "\r\n" \
+     "Hello World"
+
+
 void session_writed(
     int status,
     uvhttp_session session,
@@ -100,15 +101,22 @@ int main(int argc, char* argv[])
 {
     uvhttp_loop loop = uvhttp_loop_new();
     if ( loop) {
+        uvhttp_server server_ssl = uvhttp_server_new( loop);
         uvhttp_server server = uvhttp_server_new( loop);
         if ( server) {
-            uvhttp_server_set_option( server, UVHTTP_SRV_OPT_SSL, 1);
             uvhttp_server_set_option( server, UVHTTP_SRV_OPT_SESSION_NEW_CB, uvhttp_server_session_new);
             if ( uvhttp_server_ip4_listen( server, "0.0.0.0", 8011) == UVHTTP_OK) {
             }
         }
+        if ( server_ssl) {
+            uvhttp_server_set_option( server_ssl, UVHTTP_SRV_OPT_SSL, 1);
+            uvhttp_server_set_option( server_ssl, UVHTTP_SRV_OPT_SESSION_NEW_CB, uvhttp_server_session_new);
+            if ( uvhttp_server_ip4_listen( server_ssl, "0.0.0.0", 8012) == UVHTTP_OK) {
+            }
+        }
         uvhttp_run( loop);
         uvhttp_server_delete( server);
+        uvhttp_server_delete( server_ssl);
         uvhttp_loop_delete( loop);
     }
 #if defined(_MSC_VER) || defined(__MINGW64_VERSION_MAJOR)
