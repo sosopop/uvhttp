@@ -53,7 +53,7 @@ void session_writed(
     void* user_data
     )
 {
-    //uvhttp_session_abort( session);
+    uvhttp_session_abort( session);
 }
 
 static void uvhttp_session_request_end(
@@ -106,12 +106,14 @@ int main(int argc, char* argv[])
         if ( server) {
             uvhttp_server_set_option( server, UVHTTP_SRV_OPT_SESSION_NEW_CB, uvhttp_server_session_new);
             if ( uvhttp_server_ip4_listen( server, "0.0.0.0", 8011) == UVHTTP_OK) {
+                printf("http on 8011 success\n");
             }
         }
         if ( server_ssl) {
             uvhttp_server_set_option( server_ssl, UVHTTP_SRV_OPT_SSL, 1);
             uvhttp_server_set_option( server_ssl, UVHTTP_SRV_OPT_SESSION_NEW_CB, uvhttp_server_session_new);
             if ( uvhttp_server_ip4_listen( server_ssl, "0.0.0.0", 8012) == UVHTTP_OK) {
+                printf("https on 8012 success\n");
             }
         }
         uvhttp_run( loop);

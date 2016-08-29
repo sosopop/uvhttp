@@ -3,6 +3,9 @@
 #include "mbedtls/debug.h"
 #include "uvhttp_base.h"
 
+static void uvhttp_ssl_session_close_cb(
+    uv_handle_t* handle
+    );
 
 static void uvhttp_ssl_read_cb(
     uv_stream_t* stream,
@@ -14,7 +17,11 @@ static void uvhttp_ssl_read_cb(
     if ( nread <= 0) {
         goto cleanup;
     }
-    if ( ssl->ssl.state != MBEDTLS_SSL_HANDSHAKE_OVER) {
+    if ( ssl->is_closing) {
+        int ret = mbedtls_ssl_close_notify( &ssl->ssl);
+        uv_close( (uv_handle_t*)stream, uvhttp_ssl_session_close_cb);
+    }
+    else if ( ssl->ssl.state != MBEDTLS_SSL_HANDSHAKE_OVER) {
         int ret = 0;
         ssl->ssl_read_buffer_len = nread;
         ssl->ssl_read_buffer_offset = 0;
@@ -105,6 +112,17 @@ cleanup:
     return need_copy ;
 }
 
+static void ssl_write_user_call( 
+    struct uvhttp_ssl_session* ssl,
+    int status
+    )
+{
+    ssl->is_writing = 0;
+    if ( ssl->user_write_cb) {
+        ssl->user_write_cb( ssl->user_write_req,  status);
+    }
+}
+
 static void ssl_write_cb(
     uv_write_t* req,
     int status
@@ -113,6 +131,11 @@ static void ssl_write_cb(
     int ret = 0;
     struct uvhttp_ssl_session* ssl = (struct uvhttp_ssl_session*)req->data;
     if( status != 0) {
+        ret = UVHTTP_ERROR_FAILED;
+        goto cleanup;
+    }
+    if ( ssl->is_write_error ) {
+        ret = UVHTTP_ERROR_FAILED;
         goto cleanup;
     }
     if ( ssl->write_buffer.base) {
@@ -120,15 +143,21 @@ static void ssl_write_cb(
         ssl->write_buffer.base = 0;
     }
     //握手状态
-    if ( ssl->ssl.state != MBEDTLS_SSL_HANDSHAKE_OVER ) {
+    if ( ssl->is_closing) {
+        int ret = mbedtls_ssl_close_notify( &ssl->ssl);
+        uv_close( (uv_handle_t*)ssl, uvhttp_ssl_session_close_cb);
+    }
+    else if ( ssl->ssl.state != MBEDTLS_SSL_HANDSHAKE_OVER ) {
 		while ( (ret = mbedtls_ssl_handshake_step( &ssl->ssl )) == 0) {
 			if ( ssl->ssl.state == MBEDTLS_SSL_HANDSHAKE_OVER){
 				break;
 			}
 		}
 		if ( ret != 0 && ret != MBEDTLS_ERR_SSL_WANT_WRITE && ret != MBEDTLS_ERR_SSL_WANT_READ) {
+            ret = UVHTTP_ERROR_FAILED;
 			goto cleanup;
 		}
+        ret = 0;
     }
     else {
     //传输状态
@@ -138,6 +167,7 @@ static void ssl_write_cb(
             ssl->ssl_write_buffer_len - ssl->ssl_write_offset
             );
         if ( ret == MBEDTLS_ERR_SSL_WANT_WRITE ) {
+            ret = UVHTTP_ERROR_FAILED;
             goto cleanup;
         }
         else if ( ret > 0 ) {
@@ -145,17 +175,21 @@ static void ssl_write_cb(
             ssl->ssl_write_offset += ret;
             if ( ssl->ssl_write_offset == ssl->ssl_write_buffer_len) {
                 //写入完成回调
-                ssl->is_writing = 0;
-                ssl->user_write_cb( ssl->user_req,  0);
+                ssl_write_user_call( ssl,  0);
             }
+            ret = 0;
         }
         else {
-            ssl->is_writing = 0;
-            ssl->user_write_cb( ssl->user_req,  -1);
+            ret = UVHTTP_ERROR_FAILED;
+            goto cleanup;
         }
     }
 cleanup:
-    if( status != 0){
+    if( ret != 0) {
+        if ( !ssl->is_write_error ) {
+            ssl_write_user_call( ssl, UVHTTP_ERROR_FAILED);
+            ssl->is_write_error = 1;
+        }
     }
     if ( ssl->write_buffer.base) {
         free( ssl->write_buffer.base);
@@ -177,7 +211,9 @@ static int ssl_send(
     int ret = 0;
     ssl->write_buffer.base = 0;
     ssl->write_buffer.len = 0;
-
+    if ( ssl->is_write_error ) {
+        return UVHTTP_ERROR_FAILED;
+    }
     if ( ssl->is_async_writing == 0 ) {
         ssl->write_buffer.base = (char*)malloc( len );
         memcpy( ssl->write_buffer.base, buf, len);
@@ -196,13 +232,16 @@ static int ssl_send(
     }
 cleanup:
     if ( ret != 0) {
+        len = UVHTTP_ERROR_FAILED;
+        ssl->is_write_error = 1;
+        ssl_write_user_call( ssl, UVHTTP_ERROR_FAILED);
         if ( write_req) {
             free( write_req);
         }
         if ( ssl->write_buffer.base) {
             free( ssl->write_buffer.base);
+            ssl->write_buffer.base = 0;
         }
-        len = MBEDTLS_ERR_SSL_UNEXPECTED_RECORD;
     }
     return len;
 }
@@ -294,7 +333,7 @@ int uvhttp_ssl_session_init(
     int ret = 0;
     struct uvhttp_ssl_session* ssl = (struct uvhttp_ssl_session*)handle;
     struct uvhttp_ssl_server* ssl_server = (struct uvhttp_ssl_server*)server;
-    
+
     mbedtls_ssl_init( &ssl->ssl );
 
     if( ( ret = mbedtls_ssl_setup( &ssl->ssl, &ssl_server->conf ) ) != 0 ) {
@@ -339,17 +378,20 @@ int uvhttp_ssl_session_write(
         ret = UVHTTP_ERROR_WRITE_WAIT;
         goto cleanup;
     }
-    ssl->user_req = req;
+    ssl->is_write_error = 0;
+    ssl->user_write_req = req;
     ssl->user_write_cb = cb;
     ssl->ssl_write_buffer_len = buffer_len;
     ssl->ssl_write_buffer = buffer;
+    ssl->ssl_read_buffer_len = 0;
+    ssl->ssl_read_buffer_offset = 0;
+    ssl->ssl_write_offset = 0;
+    ssl->is_async_writing = 0;
     if ( mbedtls_ssl_write( &ssl->ssl, (const unsigned char *)buffer, 
         buffer_len ) == MBEDTLS_ERR_SSL_WANT_WRITE ) {
         ssl->is_writing = 1;
     }
 cleanup:
-    if ( ret != UVHTTP_OK) {
-    }
     return ret;
 }
 
@@ -367,8 +409,14 @@ void uvhttp_ssl_session_close(
     uv_close_cb close_cb
     )
 {
+    struct uvhttp_ssl_session* ssl = (struct uvhttp_ssl_session*)handle;
+    int ret = 0;
+    ret = mbedtls_ssl_close_notify( &ssl->ssl);
+    ssl->is_closing = 1;
     ((struct uvhttp_ssl_session*)handle)->user_close_cb = close_cb;
-    uv_close( handle, uvhttp_ssl_session_close_cb);
+    if ( MBEDTLS_ERR_SSL_WANT_READ != ret && MBEDTLS_ERR_SSL_WANT_WRITE != ret ) {
+        uv_close( handle, uvhttp_ssl_session_close_cb);
+    }
 }
 
 static void uvhttp_ssl_server_close_cb(

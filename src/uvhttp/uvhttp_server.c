@@ -532,6 +532,7 @@ static void session_close(
     )
 {
     if ( uv_is_closing( (uv_handle_t*)session_obj->tcp) == 0) {
+        //uv_read_stop( (uv_stream_t*)session_obj->tcp);
         if ( session_obj->server_obj->ssl) {
             uvhttp_ssl_session_close( (uv_handle_t*)session_obj->tcp, session_closed);
         }
@@ -622,7 +623,8 @@ int uvhttp_session_abort(
     uvhttp_session session
     )
 {
-    session_close( (struct uvhttp_session_obj*)session);
+    struct uvhttp_session_obj* session_obj = (struct uvhttp_session_obj*)session;
+    session_close( session_obj);
     return UVHTTP_OK;
 }
 
@@ -695,7 +697,12 @@ int uvhttp_session_write(
 {
     int ret = UVHTTP_OK;
     struct uvhttp_session_obj* session_obj = (struct uvhttp_session_obj*)session;
-    struct uvhttp_write_request* write_req = (struct uvhttp_write_request*)malloc( sizeof(struct uvhttp_write_request));
+    struct uvhttp_write_request* write_req = 0;
+    if ( uv_is_writable( (uv_stream_t*)session_obj->tcp) == 0) {
+        return UVHTTP_ERROR_FAILED;
+    }
+    write_req = (struct uvhttp_write_request*)malloc( sizeof(struct uvhttp_write_request));
+    memset( write_req, 0, sizeof(struct uvhttp_write_request));
     write_req->user_data = user_data;
     write_req->session = session;
     write_req->write_callback = write_callback;
