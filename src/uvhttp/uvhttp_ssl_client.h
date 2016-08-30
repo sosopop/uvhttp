@@ -1,5 +1,5 @@
-#ifndef UVHTTP_SSL_SERVER_H__
-#define UVHTTP_SSL_SERVER_H__
+#ifndef UVHTTP_SSL_CLIENT_H__
+#define UVHTTP_SSL_CLIENT_H__
 #include <stdlib.h>
 #if defined(_MSC_VER) || defined(__MINGW64_VERSION_MAJOR)
 #include <crtdbg.h>
@@ -13,7 +13,7 @@
 #include "uvhttp_internal.h"
 #include "uvhttp_util.h"
 
-struct uvhttp_ssl_session {
+struct uvhttp_ssl_client {
     uv_tcp_t tcp;
     uv_buf_t user_read_buf;
     uv_close_cb user_close_cb;
@@ -33,11 +33,6 @@ struct uvhttp_ssl_session {
     char is_closing;
     uv_buf_t write_buffer;
     mbedtls_ssl_context ssl;
-};
-
-struct uvhttp_ssl_server {
-    uv_tcp_t tcp;
-    uv_close_cb user_close_cb;
     mbedtls_pk_context key;
     mbedtls_entropy_context entropy;
     mbedtls_ctr_drbg_context ctr_drbg;
@@ -45,24 +40,25 @@ struct uvhttp_ssl_server {
     mbedtls_x509_crt srvcert;
 };
 
-int uvhttp_ssl_server_init(
+int uvhttp_ssl_client_init(
     uv_loop_t* loop,
     uv_tcp_t* handle
     );
 
-int uvhttp_ssl_session_init(
-    uv_loop_t* loop,
+int uvhttp_ssl_client_connect(
+    uv_connect_t* req,
     uv_tcp_t* handle,
-    uv_tcp_t* server
+    const struct sockaddr* addr,
+    uv_connect_cb cb
     );
 
-int uvhttp_ssl_read_session_start(
+int uvhttp_ssl_read_client_start(
     uv_stream_t* stream,
     uv_alloc_cb alloc_cb,
     uv_read_cb read_cb
     );
 
-int uvhttp_ssl_session_write(
+int uvhttp_ssl_client_write(
     uv_write_t* req,
     uv_stream_t* handle,
     char* buffer,
@@ -70,13 +66,9 @@ int uvhttp_ssl_session_write(
     uv_write_cb cb
     );
 
-void uvhttp_ssl_session_close(
+void uvhttp_ssl_client_close(
     uv_handle_t* handle, 
     uv_close_cb close_cb
     );
 
-void uvhttp_ssl_server_close(
-    uv_handle_t* handle, 
-    uv_close_cb close_cb
-    );
-#endif // UVHTTP_SSL_SERVER_H__
+#endif // UVHTTP_SSL_CLIENT_H__

@@ -1,6 +1,7 @@
 #include "uvhttp_client.h"
 #include "uvhttp_base.h"
 #include "uvhttp_client_internal.h"
+#include "uvhttp_ssl_client.h"
 #include "uvhttp_internal.h"
 #include <stdarg.h>
 
@@ -103,7 +104,7 @@ static void client_close(
     if ( uv_is_closing( (uv_handle_t*)client_obj->tcp) == 0) {
         //uv_read_stop( (uv_stream_t*)session_obj->tcp);
         if ( client_obj->ssl) {
-            //uvhttp_ssl_session_close( (uv_handle_t*)session_obj->tcp, session_closed);
+            uvhttp_ssl_client_close( (uv_handle_t*)client_obj->tcp, client_closed);
         }
         else {
             uv_close( (uv_handle_t*)client_obj->tcp, client_closed);
@@ -115,7 +116,17 @@ void uvhttp_client_delete(
     uvhttp_client client
     )
 {
-
+    struct uvhttp_client_obj* client_obj = (struct uvhttp_client_obj*)client;
+    if ( client_obj->deleted ) {
+        return;
+    }
+    if ( client_obj->status == UVHTTP_CLIENT_STATUS_RUNNING ) {
+        client_obj->deleted = 1;
+        uvhttp_client_abort( client_obj);
+    }
+    else {
+        client_delete( client_obj);
+    }
 }
 
 int uvhttp_client_abort(
