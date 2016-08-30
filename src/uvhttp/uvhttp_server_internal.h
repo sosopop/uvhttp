@@ -48,7 +48,7 @@ struct  uvhttp_session_obj {
     char* temp_header_field;
     char* temp_header_value;
     int last_error;
-    unsigned short request_end;
+    unsigned short request_finished;
 };
 
 struct uvhttp_write_request {

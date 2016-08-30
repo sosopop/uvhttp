@@ -62,6 +62,10 @@ void uvhttp_client_delete(
     uvhttp_client client
     );
 
+int uvhttp_client_abort(
+    uvhttp_client client
+    );
+
 int uvhttp_client_write(
     uvhttp_client client,
     struct uvhttp_chunk* data,

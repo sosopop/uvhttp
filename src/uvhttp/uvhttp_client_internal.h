@@ -1,5 +1,5 @@
-#ifndef UVHTTP_INTERNAL_H__
-#define UVHTTP_INTERNAL_H__
+#ifndef UVHTTP_CLIENT_INTERNAL_H__
+#define UVHTTP_CLIENT_INTERNAL_H__
 
 #include <uv.h>
 #include "uvhttp_internal.h"
@@ -19,18 +19,23 @@ struct  uvhttp_client_obj {
     uvhttp_client_body_write_callback write_callback;
     uvhttp_client_body_read_callback read_callback;
     uvhttp_client_end_callback end_callback;
-    uvhttp_client_response_callback end_callback;
+    uvhttp_client_response_callback response_callback;
 
     struct uvhttp_buffer request_buffer;
     struct uvhttp_message response;
     http_parser parser;
     struct uvhttp_buffer net_buffer_in;
     struct uvhttp_buffer net_buffer_out;
+    char* temp_header_field;
+    char* temp_header_value;
 
+    int last_error;
+    unsigned char response_finished:1;
     unsigned char deleted:1;
+    unsigned char ssl:1;
 };
 
 #if defined(__cplusplus)
 }
 #endif /* __cplusplus */
-#endif // UVHTTP_INTERNAL_H__
+#endif // UVHTTP_CLIENT_INTERNAL_H__

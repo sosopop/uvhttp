@@ -407,7 +407,7 @@ static int http_parser_on_srv_message_complete(
     if ( session_obj->request_end_callback) {
         session_obj->request_end_callback( UVHTTP_OK, session_obj);
     }
-    session_obj->request_end = 1;
+    session_obj->request_finished = 1;
     return 0;
 }
 
@@ -501,14 +501,14 @@ static void session_error(
     struct uvhttp_session_obj* session_obj
     )
 {
-    if ( session_obj->request_end == 0 && session_obj->request_end_callback) {
+    if ( session_obj->request_finished == 0 && session_obj->request_end_callback) {
         if ( session_obj->last_error != UVHTTP_OK) {
             session_obj->request_end_callback(  session_obj->last_error, session_obj);
         }
         else {
             session_obj->request_end_callback(  UVHTTP_ERROR_FAILED, session_obj);
         }
-        session_obj->request_end = 1;
+        session_obj->request_finished = 1;
     }
 }
 
@@ -579,7 +579,7 @@ static void session_reset(
     }
 
     //是否已经接收完成request请求
-    session_obj->request_end = 0;
+    session_obj->request_finished = 0;
     session_obj->last_error = UVHTTP_OK;
 }
 
