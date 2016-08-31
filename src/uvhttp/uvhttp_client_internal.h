@@ -23,9 +23,10 @@ struct  uvhttp_client_obj {
     void* user_data;
     uv_loop_t* loop;
     uv_tcp_t* tcp;
-    uvhttp_client_body_write_callback write_callback;
-    uvhttp_client_body_read_callback read_callback;
+    uvhttp_client_body_write_callback body_write_callback;
+    uvhttp_client_body_read_callback body_read_callback;
     uvhttp_client_end_callback end_callback;
+    uvhttp_client_response_end_callback response_end_callback;
     uvhttp_client_response_callback response_callback;
 
     struct uvhttp_buffer request_buffer;

@@ -14,18 +14,15 @@ typedef enum {
     UVHTTP_CLT_OPT_RESPONSE_CB,
     UVHTTP_CLT_OPT_BODY_READ_CB,
     UVHTTP_CLT_OPT_BODY_WRITE_CB,
-    UVHTTP_CLT_OPT_END_CB,
-    UVHTTP_CLT_OPT_REQUEST_HEADERS,
-    UVHTTP_CLT_OPT_REQUEST_URL,
-    UVHTTP_CLT_OPT_REQUEST_METHOD,
-    UVHTTP_CLT_OPT_REQUEST_BODY
-} uvhttp_client_opt_type;
+    UVHTTP_CLT_OPT_RESPONSE_END_CB,
+    UVHTTP_CLT_OPT_END_CB
+} uvhttp_client_option;
 
 typedef enum {
     UVHTTP_CLT_INFO_USER_DATA,
     UVHTTP_CLT_INFO_UVTCP,
     UVHTTP_CLT_INFO_LOOP
-} uvhttp_client_info_type;
+} uvhttp_client_info;
 
 typedef void (*uvhttp_client_body_write_callback)(
     uvhttp_client client
@@ -33,7 +30,8 @@ typedef void (*uvhttp_client_body_write_callback)(
 
 typedef void (*uvhttp_client_write_callback)(
     int status,
-    uvhttp_client client
+    uvhttp_client client,
+    void* user_data
     );
 
 typedef void (*uvhttp_client_response_callback)(
@@ -41,8 +39,12 @@ typedef void (*uvhttp_client_response_callback)(
     struct uvhttp_message* resp
     );
 
-typedef void (*uvhttp_client_end_callback)(
+typedef void (*uvhttp_client_response_end_callback)(
     int status,
+    uvhttp_client client
+    );
+
+typedef void (*uvhttp_client_end_callback)(
     uvhttp_client client
     );
 
@@ -55,7 +57,11 @@ uvhttp_client uvhttp_client_new(
     );
 
 int uvhttp_client_request(
-    uvhttp_client client
+    uvhttp_client client,
+    const char* url,
+    const char* method,
+    const char* header,
+    struct uvhttp_chunk* body
     );
 
 void uvhttp_client_delete(
@@ -68,10 +74,22 @@ int uvhttp_client_abort(
 
 int uvhttp_client_write(
     uvhttp_client client,
-    struct uvhttp_chunk* data,
-    uvhttp_client_body_write_callback write_callback 
+    struct uvhttp_chunk* buffer,
+    void* user_data,
+    uvhttp_client_write_callback write_callback 
+    );
+    
+int uvhttp_client_set_option( 
+    uvhttp_client client,
+    uvhttp_client_option option,
+    ...
     );
 
+int uvhttp_client_get_info( 
+    uvhttp_client client,
+    uvhttp_client_info info,
+    ...
+    );
 #if defined(__cplusplus)
 }
 #endif /* __cplusplus */
