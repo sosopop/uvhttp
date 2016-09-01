@@ -163,3 +163,16 @@ void free_string_buffer(
 {
     free( string_buffer);
 }
+
+int uvhttp_vcmp(
+    const struct uvhttp_chunk* str1, 
+    const char* str2
+    )
+{
+    size_t n2 = strlen(str2), n1 = str1->len;
+    int r = memcmp(str1->base, str2, (n1 < n2) ? n1 : n2);
+    if (r == 0) {
+        return n1 - n2;
+    }
+    return r;
+}

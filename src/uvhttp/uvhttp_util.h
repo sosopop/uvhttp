@@ -19,6 +19,11 @@ extern "C" {
 #define UVBUF_SIZE_MULTIPLIER 2
 #endif
 
+struct uvhttp_chunk {
+    unsigned int len;
+    char* base;
+};
+
 struct uvhttp_buffer {
   char *base; 
   unsigned int len;
@@ -75,6 +80,11 @@ char* new_cstring_buffer(
 
 void free_string_buffer(
     char* string_buffer
+    );
+
+int uvhttp_vcmp(
+    const struct uvhttp_chunk* str1,
+    const char* str2
     );
 
 #if defined(__cplusplus)

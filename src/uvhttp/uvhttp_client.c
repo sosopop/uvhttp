@@ -5,6 +5,10 @@
 #include "uvhttp_internal.h"
 #include <stdarg.h>
 
+static void client_reset( 
+    struct uvhttp_client_obj* client_obj
+    );
+
 uvhttp_client uvhttp_client_new(
     uvhttp_loop loop
     )
@@ -14,8 +18,134 @@ uvhttp_client uvhttp_client_new(
 
     memset( client_obj, 0, sizeof(struct uvhttp_client_obj));
     client_obj->loop = (uv_loop_t*)loop;
+    client_obj->status = UVHTTP_CLIENT_STATUS_INITED;
 
     return client_obj;
+}
+
+static int uvhttp_parse_url(
+    struct uvhttp_client_obj* client_obj,
+    const char* url,
+    struct uvhttp_chunk* host,
+    struct uvhttp_chunk* port,
+    struct uvhttp_chunk* path,
+    unsigned char* ssl
+    )
+{
+    int ret = 0;
+    struct http_parser_url parser_url;
+    http_parser_url_init( &parser_url);
+    ret = http_parser_parse_url( url, strlen(url), 0, &parser_url);
+    if ( ret !=0 ) {
+        goto cleanup;
+    }
+
+    host->base = (char*)url + parser_url.field_data[UF_HOST].off;
+    host->len = parser_url.field_data[UF_HOST].len;
+
+    if ( parser_url.field_data[UF_SCHEMA].len == 4 &&
+        !memcmp( (char*)url + parser_url.field_data[UF_SCHEMA].off, "http", 4)) {
+            *ssl = 0;
+    }else if ( parser_url.field_data[UF_SCHEMA].len == 5 &&
+        !memcmp( (char*)url + parser_url.field_data[UF_SCHEMA].off, "https", 5)) {
+            *ssl = 1;
+    }
+    else {
+        ret = -1;
+        goto cleanup;
+    }
+
+    if ( parser_url.port == 0) {
+        if ( *ssl ) {
+            port->base = "443";
+            port->len = 3;
+        }
+        else {
+            port->base = "80";
+            port->len = 2;
+        }
+    }
+    else {
+        port->base = (char*)url + parser_url.field_data[UF_PORT].off;
+        port->len = parser_url.field_data[UF_PORT].len;
+    }
+
+    path->base = (char*)url + parser_url.field_data[UF_PATH].off;
+    path->len = parser_url.field_data[UF_PATH].len;
+cleanup:
+    if ( ret != 0) {
+        ret = UVHTTP_ERROR_URL_PARSE;
+    }
+    return ret;
+}
+
+static int uvhttp_client_make_request(
+    struct uvhttp_client_obj* client_obj,
+    const char* method,
+    const char* headers,
+    struct uvhttp_chunk* body,
+    struct uvhttp_chunk* host,
+    struct uvhttp_chunk* port,
+    struct uvhttp_chunk* path
+    )
+{
+    int ret = 0;
+    char contentLength[32];
+    uvhttp_buffer_init( &client_obj->request_buffer, 1024);
+    if ( (ret = uvhttp_buf_append( &client_obj->request_buffer, method, strlen(method))) != 0) {
+        goto cleanup;
+    }
+    if ( (ret = uvhttp_buf_append( &client_obj->request_buffer, " ", 1)) != 0) {
+        goto cleanup;
+    }
+    if ( (ret = uvhttp_buf_append( &client_obj->request_buffer, path->base, path->len)) != 0) {
+        goto cleanup;
+    }
+    if ( (ret = uvhttp_buf_append( &client_obj->request_buffer, " ", 1)) != 0) {
+        goto cleanup;
+    }
+    if ( (ret = uvhttp_buf_append( &client_obj->request_buffer, "HTTP/1.1\r\nHost: ", sizeof("HTTP/1.1\r\nHost: ")-1)) != 0) {
+        goto cleanup;
+    }
+    if ( (ret = uvhttp_buf_append( &client_obj->request_buffer, " ", 1)) != 0) {
+        goto cleanup;
+    }
+    if ( (ret = uvhttp_buf_append( &client_obj->request_buffer, host->base, host->len)) != 0) {
+        goto cleanup;
+    }
+    if ( uvhttp_vcmp( port, "80") != 0) {
+        if ( (ret = uvhttp_buf_append( &client_obj->request_buffer, ":", 1)) != 0) {
+            goto cleanup;
+        }
+        if ( (ret = uvhttp_buf_append( &client_obj->request_buffer, port->base, port->len)) != 0) {
+            goto cleanup;
+        }
+    }
+    if ( (ret = uvhttp_buf_append( &client_obj->request_buffer, "\r\n", 2)) != 0) {
+        goto cleanup;
+    }
+    if ( body && body->len > 0) {
+        sprintf( contentLength, "Content-Length: %u\r\n", body->len);
+        if ( (ret = uvhttp_buf_append( &client_obj->request_buffer, contentLength, strlen(contentLength))) != 0) {
+            goto cleanup;
+        }
+    }
+    if ( (ret = uvhttp_buf_append( &client_obj->request_buffer, headers, strlen(headers))) != 0) {
+        goto cleanup;
+    }
+    if ( (ret = uvhttp_buf_append( &client_obj->request_buffer, "\r\n", 2)) != 0) {
+        goto cleanup;
+    }
+    if ( body && body->len > 0) {
+        if ( (ret = uvhttp_buf_append( &client_obj->request_buffer, body->base, body->len)) != 0) {
+            goto cleanup;
+        }
+    }
+cleanup:
+    if ( ret != 0) {
+        uvhttp_buffer_free( &client_obj->request_buffer);
+    }
+    return ret;
 }
 
 int uvhttp_client_request(
@@ -27,7 +157,51 @@ int uvhttp_client_request(
     )
 {
     int ret = 0;
+    struct uvhttp_chunk host = {0,0};
+    struct uvhttp_chunk port = {0,0};
+    struct uvhttp_chunk path = {0,0};
+    int need_new_conn = 0;
+    unsigned char ssl = 0;
+    struct uvhttp_client_obj* client_obj = (struct uvhttp_client_obj*)client;
+    if ((client_obj->status != UVHTTP_CLIENT_STATUS_INITED &&
+        client_obj->status != UVHTTP_CLIENT_STATUS_REQUEST_END &&
+        client_obj->status != UVHTTP_CLIENT_STATUS_CLOSED)||
+        client_obj->deleted) {
+        return -1;
+    }
 
+    //清空状态数据
+    client_reset( client_obj);
+
+    //解析url
+    ret = uvhttp_parse_url( 
+        client_obj, 
+        url,
+        &host,
+        &port,
+        &path,
+        &ssl
+        );
+    if ( ret != 0) {
+        goto cleanup;
+    }
+
+    client_obj->ssl = ssl;
+
+    ret = uvhttp_client_make_request(
+        client_obj,
+        method,
+        header,
+        body,
+        &host,
+        &port,
+        &path
+        );
+    if ( ret != 0) {
+        goto cleanup;
+    }
+
+cleanup:
     return ret;
 }
 
@@ -133,12 +307,13 @@ void uvhttp_client_delete(
     if ( client_obj->deleted ) {
         return;
     }
-    if ( client_obj->status == UVHTTP_CLIENT_STATUS_RUNNING ) {
-        client_obj->deleted = 1;
-        uvhttp_client_abort( client_obj);
+    else if ( client_obj->status == UVHTTP_CLIENT_STATUS_CLOSED ||
+        client_obj->status == UVHTTP_CLIENT_STATUS_INITED) {
+        client_delete( client_obj);
     }
     else {
-        client_delete( client_obj);
+        client_obj->deleted = 1;
+        uvhttp_client_abort( client_obj);
     }
 }
 

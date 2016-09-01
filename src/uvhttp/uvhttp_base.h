@@ -16,18 +16,14 @@ typedef enum {
     UVHTTP_ERROR_HTTP_PARSER = -4,
     UVHTTP_ERROR_PEER_CLOSED = -5,
     UVHTTP_ERROR_NO_BUFFERS = -6,
-    UVHTTP_ERROR_WRITE_WAIT = -7
+    UVHTTP_ERROR_WRITE_WAIT = -7,
+    UVHTTP_ERROR_URL_PARSE = -8
 } uvhttp_error_code;
 
 struct uvhttp_header {
     char* field;
     char* value;
     struct uvhttp_header* next;
-};
-
-struct uvhttp_chunk {
-    unsigned int len;
-    char* base;
 };
 
 typedef enum {
