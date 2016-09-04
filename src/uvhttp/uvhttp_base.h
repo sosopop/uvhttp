@@ -17,7 +17,9 @@ typedef enum {
     UVHTTP_ERROR_PEER_CLOSED = -5,
     UVHTTP_ERROR_NO_BUFFERS = -6,
     UVHTTP_ERROR_WRITE_WAIT = -7,
-    UVHTTP_ERROR_URL_PARSE = -8
+    UVHTTP_ERROR_URL_PARSE = -8,
+    UVHTTP_ERROR_HOSTNAME_TOOLONG = -9,
+    UVHTTP_ERROR_REQUEST_NOTEND = -10
 } uvhttp_error_code;
 
 struct uvhttp_header {

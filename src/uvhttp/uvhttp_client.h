@@ -49,7 +49,8 @@ typedef void (*uvhttp_client_end_callback)(
     );
 
 typedef void (*uvhttp_client_body_read_callback)(
-    uvhttp_client client
+    uvhttp_client client,
+    struct uvhttp_chunk data
     );
 
 uvhttp_client uvhttp_client_new(

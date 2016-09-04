@@ -34,16 +34,20 @@ struct  uvhttp_client_obj {
     struct uvhttp_buffer request_buffer;
     struct uvhttp_message response;
     http_parser parser;
-    struct uvhttp_buffer net_buffer_in;
+    char net_buffer_in[UVHTTP_NET_BUFFER_SIZE];
     struct uvhttp_buffer net_buffer_out;
     char* temp_header_field;
     char* temp_header_value;
 
+    char host[MAX_DOMAIN_SIZE];
+    char port[PORT_SIZE];
+
     int last_error;
-    unsigned char status:5;
+    unsigned char status:4;
     unsigned char response_finished:1;
     unsigned char deleted:1;
     unsigned char ssl:1;
+    unsigned char new_conn:1;
 };
 
 #if defined(__cplusplus)
