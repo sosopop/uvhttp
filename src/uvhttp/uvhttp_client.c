@@ -226,58 +226,61 @@ static int uvhttp_client_make_request(
     struct uvhttp_chunk* path
     )
 {
-    int ret = 0;
+    int ret = UVHTTP_ERROR_FAILED;
     char contentLength[32];
     uvhttp_buffer_init( &client_obj->request_buffer, 1024);
-    if ( (ret = uvhttp_buf_append( &client_obj->request_buffer, method, strlen(method))) != 0) {
+    if ( uvhttp_buf_append( &client_obj->request_buffer, method, strlen(method)) == 0) {
         goto cleanup;
     }
-    if ( (ret = uvhttp_buf_append( &client_obj->request_buffer, " ", 1)) != 0) {
+    if ( uvhttp_buf_append( &client_obj->request_buffer, " ", 1) == 0) {
         goto cleanup;
     }
-    if ( (ret = uvhttp_buf_append( &client_obj->request_buffer, path->base, path->len)) != 0) {
+    if ( uvhttp_buf_append( &client_obj->request_buffer, path->base, path->len) == 0) {
         goto cleanup;
     }
-    if ( (ret = uvhttp_buf_append( &client_obj->request_buffer, " ", 1)) != 0) {
+    if ( uvhttp_buf_append( &client_obj->request_buffer, " ", 1) == 0) {
         goto cleanup;
     }
-    if ( (ret = uvhttp_buf_append( &client_obj->request_buffer, "HTTP/1.1\r\nHost: ", sizeof("HTTP/1.1\r\nHost: ")-1)) != 0) {
+    if ( uvhttp_buf_append( &client_obj->request_buffer, "HTTP/1.1\r\nHost: ", sizeof("HTTP/1.1\r\nHost: ")-1) == 0) {
         goto cleanup;
     }
-    if ( (ret = uvhttp_buf_append( &client_obj->request_buffer, " ", 1)) != 0) {
+    if ( uvhttp_buf_append( &client_obj->request_buffer, " ", 1) == 0) {
         goto cleanup;
     }
-    if ( (ret = uvhttp_buf_append( &client_obj->request_buffer, host->base, host->len)) != 0) {
+    if ( uvhttp_buf_append( &client_obj->request_buffer, host->base, host->len) == 0) {
         goto cleanup;
     }
     if ( uvhttp_vcmp( port, "80") != 0) {
-        if ( (ret = uvhttp_buf_append( &client_obj->request_buffer, ":", 1)) != 0) {
+        if ( uvhttp_buf_append( &client_obj->request_buffer, ":", 1) == 0) {
             goto cleanup;
         }
-        if ( (ret = uvhttp_buf_append( &client_obj->request_buffer, port->base, port->len)) != 0) {
+        if ( uvhttp_buf_append( &client_obj->request_buffer, port->base, port->len) == 0) {
             goto cleanup;
         }
     }
-    if ( (ret = uvhttp_buf_append( &client_obj->request_buffer, "\r\n", 2)) != 0) {
+    if ( uvhttp_buf_append( &client_obj->request_buffer, "\r\n", 2) == 0) {
         goto cleanup;
     }
     if ( body && body->len > 0) {
         sprintf( contentLength, "Content-Length: %u\r\n", body->len);
-        if ( (ret = uvhttp_buf_append( &client_obj->request_buffer, contentLength, strlen(contentLength))) != 0) {
+        if ( uvhttp_buf_append( &client_obj->request_buffer, contentLength, strlen(contentLength)) == 0) {
             goto cleanup;
         }
     }
-    if ( (ret = uvhttp_buf_append( &client_obj->request_buffer, headers, strlen(headers))) != 0) {
-        goto cleanup;
+    if ( headers) {
+        if ( uvhttp_buf_append( &client_obj->request_buffer, headers, strlen(headers)) == 0) {
+            goto cleanup;
+        }
     }
-    if ( (ret = uvhttp_buf_append( &client_obj->request_buffer, "\r\n", 2)) != 0) {
+    if ( uvhttp_buf_append( &client_obj->request_buffer, "\r\n", 2) == 0) {
         goto cleanup;
     }
     if ( body && body->len > 0) {
-        if ( (ret = uvhttp_buf_append( &client_obj->request_buffer, body->base, body->len)) != 0) {
+        if ( uvhttp_buf_append( &client_obj->request_buffer, body->base, body->len) == 0) {
             goto cleanup;
         }
     }
+    ret = UVHTTP_OK;
 cleanup:
     if ( ret != 0) {
         uvhttp_buffer_free( &client_obj->request_buffer);
@@ -575,6 +578,11 @@ int uvhttp_client_request(
         goto cleanup;
     }
 
+    if ( path.len == 0) {
+        path.base = "/";
+        path.len = 1;
+    }
+
     client_obj->ssl = ssl;
 
     ret = uvhttp_client_make_request(
@@ -765,10 +773,10 @@ int uvhttp_client_set_option(
     case UVHTTP_CLT_OPT_RESPONSE_CB:
         client_obj->response_callback = va_arg(ap, uvhttp_client_response_callback);
         break;
-    case UVHTTP_CLT_OPT_BODY_READ_CB:
+    case UVHTTP_CLT_OPT_RESPONSE_BODY_READ_CB:
         client_obj->body_read_callback = va_arg(ap, uvhttp_client_body_read_callback);
         break;
-    case UVHTTP_CLT_OPT_BODY_WRITE_CB:
+    case UVHTTP_CLT_OPT_REQUEST_BODY_WRITE_CB:
         client_obj->body_write_callback = va_arg(ap, uvhttp_client_body_write_callback);
         break;
     case UVHTTP_CLT_OPT_RESPONSE_END_CB:
