@@ -91,6 +91,7 @@ int uvhttp_session_write(
     uvhttp_session_write_callback write_callback 
     );
 
+	//需要修改为调用uv_shutdown
 int uvhttp_session_abort(
     uvhttp_session session
     );
