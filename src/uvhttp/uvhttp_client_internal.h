@@ -35,7 +35,6 @@ struct  uvhttp_client_obj {
     struct uvhttp_message response;
     http_parser parser;
     char net_buffer_in[UVHTTP_NET_BUFFER_SIZE];
-    struct uvhttp_buffer net_buffer_out;
     char* temp_header_field;
     char* temp_header_value;
 

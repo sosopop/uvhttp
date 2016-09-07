@@ -78,6 +78,11 @@ static int http_parser_on_client_headers_complete(
         client_obj->temp_header_field = 0;
         client_obj->temp_header_value = 0;
     }
+    client_obj->response.status_code = parser->status_code;
+    client_obj->response.http_major = parser->http_major;
+    client_obj->response.http_minor = parser->http_minor;
+    client_obj->response.content_length = parser->content_length;
+    client_obj->response.keep_alive = http_should_keep_alive(parser);
     if ( client_obj->response_callback) {
         client_obj->response_callback(
             client_obj,
@@ -670,7 +675,7 @@ static void client_reset(
         client_obj->response.resp_status = 0;
     }
 
-    //是否已经接收完成request请求
+    uvhttp_buffer_free( &client_obj->request_buffer);
     client_obj->response_finished = 0;
     client_obj->last_error = UVHTTP_OK;
 }

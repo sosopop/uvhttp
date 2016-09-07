@@ -373,6 +373,9 @@ static int http_parser_on_srv_headers_complete(
         session_obj->temp_header_field = 0;
         session_obj->temp_header_value = 0;
     }
+    session_obj->request.http_major = parser->http_major;
+    session_obj->request.http_minor = parser->http_minor;
+    session_obj->request.keep_alive = http_should_keep_alive(parser);
     if ( session_obj->request_callback) {
         session_obj->request_callback(
             session_obj,

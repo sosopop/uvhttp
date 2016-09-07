@@ -66,10 +66,11 @@ typedef enum {
 
 struct uvhttp_message {
     unsigned long long content_length;
-    unsigned char http_major;
-    unsigned char http_minor;
+    unsigned short http_major;
+    unsigned short http_minor;
     unsigned char status_code;
     unsigned char method;
+    unsigned char keep_alive;
     const char* resp_status;
     const char* uri;
     struct uvhttp_header* headers;
