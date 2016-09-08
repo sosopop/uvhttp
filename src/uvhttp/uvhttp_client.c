@@ -719,7 +719,9 @@ static void client_closed(
     if ( client_obj->end_callback) {
         client_obj->end_callback( client_obj);
     }
-    client_delete( client_obj);
+    if ( client_obj->deleted) {
+        client_delete( client_obj);
+    }
 }
 
 static void client_close( 
@@ -751,6 +753,7 @@ void uvhttp_client_delete(
         client_delete( client_obj);
     }
     else {
+        printf( "deleted\n");
         client_obj->deleted = 1;
         uvhttp_client_abort( client_obj);
     }
