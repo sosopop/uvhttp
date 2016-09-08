@@ -14,6 +14,7 @@ static char client_body_read_called = 0;
 static char client_end_called = 0;
 static char* response_body = 0;
 static int content_length = 0;
+static int run_times = 0;
 
 static void client_body_write_callback(
     uvhttp_client client
@@ -59,7 +60,12 @@ void client_response_end_callback(
     )
 {
     client_response_end_called = 1;
-    uvhttp_client_abort( client);
+    if ( run_times++ < 10) {
+        TEST_EQ( uvhttp_client_request( client, "http://www.w3school.com.cn", "GET", "User-Agent: UVHttp\r\n", 0) == UVHTTP_OK);
+    }
+    else {
+        uvhttp_client_abort( client);
+    }
 }
 
 void client_end_callback(
@@ -96,7 +102,7 @@ void do_test06(){
         uvhttp_client_set_option( client, UVHTTP_CLT_OPT_REQUEST_BODY_WRITE_CB, client_body_write_callback);
         uvhttp_client_set_option( client, UVHTTP_CLT_OPT_RESPONSE_END_CB, client_response_end_callback);
         uvhttp_client_set_option( client, UVHTTP_CLT_OPT_END_CB, client_end_callback);
-        TEST_EQ( uvhttp_client_request( client, "http://www.youku.com", "GET", "User-Agent: UVHttp\r\n", 0) == UVHTTP_OK);
+        TEST_EQ( uvhttp_client_request( client, "http://www.w3school.com.cn", "GET", "User-Agent: UVHttp\r\n", 0) == UVHTTP_OK);
         uvhttp_run( loop);
         uvhttp_client_delete( client);
         uvhttp_loop_delete( loop);

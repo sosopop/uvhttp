@@ -114,6 +114,7 @@ static int http_parser_on_client_message_complete(
     )
 {
     struct uvhttp_client_obj* client_obj = UVHTTP_CONTAINER_PTR( struct uvhttp_client_obj, parser, parser );
+    client_obj->status = UVHTTP_CLIENT_STATUS_REQUEST_END;
     if ( client_obj->response_end_callback) {
         client_obj->response_end_callback( UVHTTP_OK, client_obj);
     }
@@ -331,6 +332,7 @@ static int write_client_request(
     int ret = 0;
     uv_write_t* write_req = 0;
     uv_buf_t req_buf;
+    client_obj->status = UVHTTP_CLIENT_STATUS_REQUESTING;
 
     if ( client_obj->ssl) {
     }
@@ -535,6 +537,7 @@ static int client_new_conn_request( struct uvhttp_client_obj* client_obj) {
     }
     memset( client_obj->tcp, 0, sizeof(uv_tcp_t));
     client_obj->tcp->data = client_obj;
+    client_obj->status = UVHTTP_CLIENT_STATUS_REQUESTING;
     if ( (ret = uv_tcp_init( client_obj->loop, client_obj->tcp)) != 0) {
         goto cleanup;
     }
@@ -710,6 +713,7 @@ static void client_closed(
 {
     struct uvhttp_client_obj* client_obj = (struct uvhttp_client_obj*)handle->data;
     //如果关闭连接之前有错误导致request_end没有调用，则先通知request_end
+    client_obj->status = UVHTTP_CLIENT_STATUS_CLOSED;
     client_error( client_obj);
     //关闭连接回调
     if ( client_obj->end_callback) {
@@ -723,6 +727,7 @@ static void client_close(
     )
 {
     if ( uv_is_closing( (uv_handle_t*)client_obj->tcp) == 0) {
+        client_obj->status = UVHTTP_CLIENT_STATUS_CLOSING;
         //uv_read_stop( (uv_stream_t*)session_obj->tcp);
         if ( client_obj->ssl) {
             uvhttp_ssl_client_close( (uv_handle_t*)client_obj->tcp, client_closed);
