@@ -23,7 +23,7 @@ static void client_body_write_callback(
 
 }
 
-void client_write_callback(
+static void client_write_callback(
     int status,
     uvhttp_client client,
     void* user_data
@@ -32,7 +32,7 @@ void client_write_callback(
 
 }
 
-void client_response_callback(
+static void client_response_callback(
     uvhttp_client client,
     struct uvhttp_message* resp
     )
@@ -54,7 +54,7 @@ void client_response_callback(
     client_response_called = 1;
 }
 
-void client_response_end_callback(
+static void client_response_end_callback(
     int status,
     uvhttp_client client
     )
@@ -68,14 +68,14 @@ void client_response_end_callback(
     }
 }
 
-void client_end_callback(
+static void client_end_callback(
     uvhttp_client client
     )
 {
     client_end_called = 1;
 }
 
-void client_body_read_callback(
+static void client_body_read_callback(
     uvhttp_client client,
     struct uvhttp_chunk data
     )

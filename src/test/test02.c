@@ -7,8 +7,6 @@
 #include "uvhttp_base.h"
 #include "uvhttp_internal.h"
 
-//后面还需要增加keepalive的测试
-
 static char uvhttp_server_session_new_called = 0;
 static char uvhttp_session_request_called = 0;
 static char uvhttp_session_body_read_called = 0;
