@@ -15,13 +15,7 @@ static char client_end_called = 0;
 static char* response_body = 0;
 static int content_length = 0;
 static char* request_body = 0;
-
-static void client_body_write_callback(
-    uvhttp_client client
-    )
-{
-
-}
+static char is_second_visit = 0;
 
 static void client_write_callback(
     int status,
@@ -29,7 +23,17 @@ static void client_write_callback(
     void* user_data
     )
 {
+    TEST_EQ( status == 0);
+}
 
+static void client_body_write_callback(
+    uvhttp_client client
+    )
+{
+    struct uvhttp_chunk http_request_body;
+    http_request_body.base = "name=test07_";
+    http_request_body.len = strlen( http_request_body.base);
+    uvhttp_client_write( client, &http_request_body, 0, client_write_callback);
 }
 
 static void client_response_callback(
@@ -59,8 +63,17 @@ static void client_response_end_callback(
     uvhttp_client client
     )
 {
+    struct uvhttp_message* response = 0;
+    uvhttp_client_get_info( client, UVHTTP_CLT_INFO_MESSAGE, &response);
     client_response_end_called = 1;
-    uvhttp_client_abort( client);
+    uvhttp_client_set_option( client, UVHTTP_CLT_OPT_REQUEST_BODY_WRITE_CB, client_body_write_callback);
+    if ( is_second_visit) {
+        uvhttp_client_abort( client);
+    }
+    else {
+        TEST_EQ( uvhttp_client_request( client, "http://127.0.0.1:8011/test07_", "GET", "User-Agent: UVHttp\r\nContent-Length: 12\r\n", 0) == UVHTTP_OK);
+        is_second_visit = 1;
+    }
 }
 
 static void client_end_callback(
@@ -85,8 +98,14 @@ static void session_writed(
     void* user_data
     )
 {
+    struct uvhttp_message* request = 0;
+    uvhttp_session_get_info( session, UVHTTP_SESSION_INFO_MESSAGE, &request);
     TEST_EQ( status == 0);
-    uvhttp_session_abort( session);
+    TEST_EQ( request != 0);
+
+    if ( strcmp( request->uri, "/test07_") == 0) {
+        uvhttp_session_abort( session);
+    }
 }
 
 static void uvhttp_session_request(
@@ -108,8 +127,13 @@ static void uvhttp_session_request(
             }
         }
     }
-
-    TEST_EQ( strcmp( request->uri, "/test07") == 0);
+    if ( strcmp( request->uri, "/test07") == 0) {
+    }
+    else if ( strcmp( request->uri, "/test07_") == 0) {
+    }
+    else {
+        TEST_EQ( 0);
+    }
     TEST_EQ( find_host);
 }
 
@@ -135,11 +159,25 @@ static void uvhttp_session_request_end(
     )
 {
     struct uvhttp_chunk response;
+    struct uvhttp_message* request = 0;
+    uvhttp_session_get_info( session, UVHTTP_SESSION_INFO_MESSAGE, &request);
     TEST_EQ( status == 0);
     response.base = RESPONSE;
     response.len = sizeof(RESPONSE) - 1;
     uvhttp_session_write( session, &response, 0, session_writed);
-    TEST_EQ( strcmp( request_body, "name=test07") == 0);
+    if ( strcmp( request->uri, "/test07") == 0) {
+        TEST_EQ( strcmp( request_body, "name=test07") == 0);
+    }
+    else if ( strcmp( request->uri, "/test07_") == 0) {
+        TEST_EQ( strcmp( request_body, "name=test07_") == 0);
+    }
+    else {
+        TEST_EQ( 0);
+    }
+    if ( request_body) {
+        free_string_buffer( request_body);
+        request_body = 0;
+    }
 }
 
 static void uvhttp_session_end(
@@ -192,7 +230,6 @@ void do_test07(){
 
         uvhttp_client_set_option( client, UVHTTP_CLT_OPT_RESPONSE_CB, client_response_callback);
         uvhttp_client_set_option( client, UVHTTP_CLT_OPT_RESPONSE_BODY_READ_CB, client_body_read_callback);
-        uvhttp_client_set_option( client, UVHTTP_CLT_OPT_REQUEST_BODY_WRITE_CB, client_body_write_callback);
         uvhttp_client_set_option( client, UVHTTP_CLT_OPT_RESPONSE_END_CB, client_response_end_callback);
         uvhttp_client_set_option( client, UVHTTP_CLT_OPT_END_CB, client_end_callback);
         http_request_body.base = "name=test07";

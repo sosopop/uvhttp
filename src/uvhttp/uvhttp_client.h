@@ -21,7 +21,8 @@ typedef enum {
 typedef enum {
     UVHTTP_CLT_INFO_USER_DATA,
     UVHTTP_CLT_INFO_UVTCP,
-    UVHTTP_CLT_INFO_LOOP
+    UVHTTP_CLT_INFO_LOOP,
+    UVHTTP_CLT_INFO_MESSAGE
 } uvhttp_client_info;
 
 typedef void (*uvhttp_client_body_write_callback)(

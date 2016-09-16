@@ -49,6 +49,12 @@ struct  uvhttp_client_obj {
     unsigned char new_conn:1;
 };
 
+struct uvhttp_client_write_request {
+    uv_write_t write_req;
+    uvhttp_client client;
+    void* user_data;
+    uvhttp_client_write_callback write_callback;
+};
 #if defined(__cplusplus)
 }
 #endif /* __cplusplus */

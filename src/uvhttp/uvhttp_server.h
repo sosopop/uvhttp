@@ -34,7 +34,8 @@ typedef enum {
 typedef enum {
     UVHTTP_SESSION_INFO_USER_DATA,
     UVHTTP_SESSION_INFO_UVTCP,
-    UVHTTP_SESSION_INFO_LOOP
+    UVHTTP_SESSION_INFO_LOOP,
+    UVHTTP_SESSION_INFO_MESSAGE
 } uvhttp_session_info;
 
 typedef void (*uvhttp_server_session_new_callback)(

@@ -51,7 +51,7 @@ struct  uvhttp_session_obj {
     unsigned short request_finished;
 };
 
-struct uvhttp_write_request {
+struct uvhttp_session_write_request {
     uv_write_t write_req;
     uvhttp_session session;
     void* user_data;
