@@ -31,3 +31,16 @@
 # Debug files
 *.dSYM/
 *.su
+
+#vc
+*.opensdf
+*.sdf
+*.suo
+*.vcxproj.user
+
+#proj
+proj/win32/Debug/
+proj/win32/Release/
+proj/win32/helloworld/
+proj/win32/ipch/
+proj/win32/test/

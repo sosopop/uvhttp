@@ -37,7 +37,7 @@ struct uvhttp_ssl_client {
     mbedtls_entropy_context entropy;
     mbedtls_ctr_drbg_context ctr_drbg;
     mbedtls_ssl_config conf;
-    mbedtls_x509_crt srvcert;
+    mbedtls_x509_crt cacert;
 };
 
 int uvhttp_ssl_client_init(

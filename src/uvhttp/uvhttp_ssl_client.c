@@ -257,64 +257,53 @@ int uvhttp_ssl_client_init(
     uv_tcp_t* handle
     )
 {
-//     int ret = 0;
-//     struct uvhttp_ssl_server* ssl = (struct uvhttp_ssl_server*)handle;
-// 
-//     mbedtls_ssl_config_init( &ssl->conf );
-//     mbedtls_x509_crt_init( &ssl->srvcert );
-//     mbedtls_ctr_drbg_init( &ssl->ctr_drbg );
-//     mbedtls_entropy_init( &ssl->entropy );
-//     mbedtls_pk_init( &ssl->key );
-// 
-//     if( ( ret = mbedtls_ctr_drbg_seed( &ssl->ctr_drbg, mbedtls_entropy_func, &ssl->entropy,
-//         (const unsigned char *) "UVHTTP",
-//         sizeof( "UVHTTP" ) -1) ) != 0 ) {
-//             goto cleanup;
-//     }
-// 
-//     ret = mbedtls_x509_crt_parse( &ssl->srvcert, (const unsigned char *) mbedtls_test_srv_crt,
-//         mbedtls_test_srv_crt_len );
-//     if( ret < 0 ) {
-//         goto cleanup;
-//     }
-// 
-//     ret = mbedtls_x509_crt_parse( &ssl->srvcert, (const unsigned char *) mbedtls_test_cas_pem,
-//         mbedtls_test_cas_pem_len );
-//     if( ret != 0 ) {
-//         goto cleanup;
-//     }
-// 
-//     ret =  mbedtls_pk_parse_key( &ssl->key, (const unsigned char *) mbedtls_test_srv_key,
-//         mbedtls_test_srv_key_len, NULL, 0 );
-//     if( ret < 0 ) {
-//         goto cleanup;
-//     }
-// 
-//     if( ( ret = mbedtls_ssl_config_defaults( &ssl->conf,
-//         MBEDTLS_SSL_IS_SERVER,
-//         MBEDTLS_SSL_TRANSPORT_STREAM,
-//         MBEDTLS_SSL_PRESET_DEFAULT ) ) != 0 ) {
-//             goto cleanup;
-//     }
-// 
-//     mbedtls_ssl_conf_authmode( &ssl->conf, MBEDTLS_SSL_VERIFY_OPTIONAL );
-//     mbedtls_ssl_conf_ca_chain( &ssl->conf, &ssl->srvcert, NULL );
-//     if( ( ret = mbedtls_ssl_conf_own_cert( &ssl->conf, &ssl->srvcert, &ssl->key) ) != 0 ) {
-//         goto cleanup;
-//     }
-//     mbedtls_ssl_conf_rng( &ssl->conf, mbedtls_ctr_drbg_random, &ssl->ctr_drbg );
-// 
-//     //mbedtls_ssl_conf_dbg( &ssl->conf, my_debug, stdout );
-//     //mbedtls_debug_set_threshold( 1 );
-// 
-//     ret = uv_tcp_init( loop, (uv_tcp_t*)&ssl->tcp);
-//     if ( ret != 0) {
-//         goto cleanup;
-//     }
-// cleanup:
-//     return ret;
+     int ret = 0;
+     struct uvhttp_ssl_client* ssl = (struct uvhttp_ssl_client*)handle;
 
-    return 0;
+     mbedtls_ssl_init( &ssl->ssl );
+     mbedtls_ssl_config_init( &ssl->conf );
+     mbedtls_x509_crt_init( &ssl->cacert );
+     mbedtls_ctr_drbg_init( &ssl->ctr_drbg );
+     mbedtls_entropy_init( &ssl->entropy );
+ 
+     if( ( ret = mbedtls_ctr_drbg_seed( &ssl->ctr_drbg, mbedtls_entropy_func, &ssl->entropy,
+         (const unsigned char *) "UVHTTP",
+         sizeof( "UVHTTP" ) -1) ) != 0 ) {
+             goto cleanup;
+     }
+ 
+     ret = mbedtls_x509_crt_parse( &ssl->cacert, (const unsigned char *) mbedtls_test_cas_pem,
+         mbedtls_test_cas_pem_len );
+     if( ret != 0 ) {
+         goto cleanup;
+     }
+ 
+     if( ( ret = mbedtls_ssl_config_defaults( &ssl->conf,
+         MBEDTLS_SSL_IS_CLIENT,
+         MBEDTLS_SSL_TRANSPORT_STREAM,
+         MBEDTLS_SSL_PRESET_DEFAULT ) ) != 0 ) {
+             goto cleanup;
+     }
+ 
+     mbedtls_ssl_conf_authmode( &ssl->conf, MBEDTLS_SSL_VERIFY_OPTIONAL );
+     mbedtls_ssl_conf_ca_chain( &ssl->conf, &ssl->cacert, NULL );
+     mbedtls_ssl_conf_rng( &ssl->conf, mbedtls_ctr_drbg_random, &ssl->ctr_drbg );
+ 
+     //mbedtls_ssl_conf_dbg( &ssl->conf, my_debug, stdout );
+     //mbedtls_debug_set_threshold( 1 );
+     if( ( ret = mbedtls_ssl_setup( &ssl->ssl, &ssl->conf ) ) != 0 ) {
+         goto cleanup;
+     }
+     if( ( ret = mbedtls_ssl_set_hostname( &ssl->ssl, "UVHttp Client" ) ) != 0 ) {
+         goto cleanup;
+     }
+ 
+     ret = uv_tcp_init( loop, (uv_tcp_t*)&ssl->tcp);
+     if ( ret != 0) {
+         goto cleanup;
+     }
+ cleanup:
+     return ret;
 }
 
 // int uvhttp_ssl_session_init(

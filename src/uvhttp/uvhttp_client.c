@@ -523,15 +523,22 @@ static int client_getaddr( struct uvhttp_client_obj* client_obj) {
 static int client_new_conn_request( struct uvhttp_client_obj* client_obj) {
     int ret = 0;
     if ( client_obj->ssl) {
+        client_obj->tcp = (uv_tcp_t*)malloc( sizeof(struct uvhttp_ssl_client) );
+        memset( client_obj->tcp, 0, sizeof(struct uvhttp_ssl_client)); 
+        client_obj->tcp->data = client_obj;
+        ret = uvhttp_ssl_client_init( client_obj->loop, client_obj->tcp );
+        if ( ret != 0) {
+            goto cleanup;
+        }
     }
     else{
         client_obj->tcp = (uv_tcp_t*)malloc( sizeof(uv_tcp_t) );
-    }
-    memset( client_obj->tcp, 0, sizeof(uv_tcp_t));
-    client_obj->tcp->data = client_obj;
-    client_obj->status = UVHTTP_CLIENT_STATUS_REQUESTING;
-    if ( (ret = uv_tcp_init( client_obj->loop, client_obj->tcp)) != 0) {
-        goto cleanup;
+        memset( client_obj->tcp, 0, sizeof(uv_tcp_t));
+        client_obj->tcp->data = client_obj;
+        client_obj->status = UVHTTP_CLIENT_STATUS_REQUESTING;
+        if ( (ret = uv_tcp_init( client_obj->loop, client_obj->tcp)) != 0) {
+            goto cleanup;
+        }
     }
     if ( (ret = client_getaddr( client_obj)) != 0) {
         goto cleanup;
