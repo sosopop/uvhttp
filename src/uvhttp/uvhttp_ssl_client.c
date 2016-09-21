@@ -422,3 +422,48 @@ void uvhttp_ssl_client_close(
 //    ((struct uvhttp_ssl_server*)handle)->user_close_cb = close_cb;
 //    uv_close( handle, uvhttp_ssl_server_close_cb);
 //}
+
+static void uvhttp_ssl_client_connected(
+    uv_connect_t* req, 
+    int status
+    )
+{
+    int ret = 0;
+    struct uvhttp_client_obj* client_obj = (struct uvhttp_client_obj*)req->data;
+    if ( status < 0 ) {
+        ret = -1;
+        goto cleanup;
+    }
+//     ret = client_start_read( client_obj);
+//     if ( ret != 0) {
+//         goto cleanup;
+//     }
+//     ret = write_client_request( client_obj );
+//     if ( ret != 0 ) {
+//         goto cleanup;
+//     }
+cleanup:
+    if ( ret != 0) {
+//         client_obj->last_error = ret;
+//         client_error( client_obj);
+    }
+    if ( req )
+        free( req);
+}
+
+int uvhttp_ssl_client_connect(
+    uv_connect_t* req,
+    uv_tcp_t* handle,
+    const struct sockaddr* addr,
+    uv_connect_cb cb
+    )
+{
+    int ret = 0;
+    struct uvhttp_ssl_client* ssl = (struct uvhttp_ssl_client*)handle;
+    ssl->user_connnect_cb = cb;
+    ret = uv_tcp_connect( req, handle, addr, uvhttp_ssl_client_connected);
+    if ( ret != 0)
+        goto cleanup;
+cleanup:
+    return ret;
+}

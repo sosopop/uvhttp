@@ -20,6 +20,7 @@ struct uvhttp_ssl_client {
     uv_read_cb user_read_cb;
     uv_write_cb user_write_cb;
     uv_alloc_cb user_alloc_cb;
+    uv_connect_cb user_connnect_cb;
     uv_write_t* user_write_req;
     char ssl_read_buffer[UVHTTP_NET_BUFFER_SIZE];
     unsigned int ssl_read_buffer_len;

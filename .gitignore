@@ -37,6 +37,7 @@
 *.sdf
 *.suo
 *.vcxproj.user
+*.vc.db
 
 #proj
 proj/win32/Debug/

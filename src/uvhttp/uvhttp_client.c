@@ -463,7 +463,7 @@ cleanup:
 static void client_getaddrinfo(
     uv_getaddrinfo_t* req,
     int status,
-struct addrinfo* res
+    struct addrinfo* res
     )
 {
     int ret = 0;
@@ -481,6 +481,7 @@ struct addrinfo* res
     connect_req = (uv_connect_t*)malloc(sizeof(uv_connect_t));
     connect_req->data = client_obj;
     if ( client_obj->ssl) {
+		uvhttp_ssl_client_connect( connect_req, client_obj->tcp, res->ai_addr, client_connected);
     }
     else {
         ret = uv_tcp_connect( connect_req, client_obj->tcp, res->ai_addr, client_connected);
