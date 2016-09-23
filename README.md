@@ -4,11 +4,11 @@ UVHttp is an asynchronous HTTP framework written in C. The goal of uvhttp is to 
 UVHttp will teaching you how to create a simple http server and http client, before this I was very difficult to find a support c language, HTTPS, asynchronous framework of the HTTP server and the client's open source code, so I try to learn and develop the UVHttp, I hope to help you.
 
 ##Features
-Cross platform
-HTTP keep-alive
-Non-blocking I/O
-HTTPS
-Server and client
+Cross platform<br>
+HTTP keep-alive<br>
+Non-blocking I/O<br>
+HTTPS<br>
+Server and client<br>
 
 ##Sample
 ```c
@@ -82,7 +82,6 @@ static void uvhttp_session_end(
 {
     uvhttp_server server = 0;
     uvhttp_session_get_info( session, UVHTTP_SESSION_INFO_USER_DATA, &server);
-    //uvhttp_server_abort( server);
 #ifdef OUTPUT_DEUBGINFO
     printf( "session end!\n");
 #endif
