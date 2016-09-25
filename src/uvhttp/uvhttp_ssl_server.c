@@ -19,7 +19,9 @@ static void uvhttp_ssl_read_cb(
     }
     if ( ssl->is_closing) {
         int ret = mbedtls_ssl_close_notify( &ssl->ssl);
-        uv_close( (uv_handle_t*)stream, uvhttp_ssl_session_close_cb);
+        if ( uv_is_closing( (uv_handle_t*)ssl) == 0) {
+            uv_close( (uv_handle_t*)stream, uvhttp_ssl_session_close_cb);
+        }
     }
     else if ( ssl->ssl.state != MBEDTLS_SSL_HANDSHAKE_OVER) {
         int ret = 0;
@@ -145,7 +147,9 @@ static void ssl_write_cb(
     //ÎÕÊÖ×´Ì¬
     if ( ssl->is_closing) {
         int ret = mbedtls_ssl_close_notify( &ssl->ssl);
-        uv_close( (uv_handle_t*)ssl, uvhttp_ssl_session_close_cb);
+        if ( uv_is_closing( (uv_handle_t*)ssl) == 0) {
+            uv_close( (uv_handle_t*)ssl, uvhttp_ssl_session_close_cb);
+        }
     }
     else if ( ssl->ssl.state != MBEDTLS_SSL_HANDSHAKE_OVER ) {
 		while ( (ret = mbedtls_ssl_handshake_step( &ssl->ssl )) == 0) {
@@ -374,7 +378,7 @@ int uvhttp_ssl_session_write(
 {
     int ret = 0;
     struct uvhttp_ssl_session* ssl = (struct uvhttp_ssl_session*)handle;
-    if ( ssl->is_writing ) {
+    if ( ssl->is_writing || ssl->is_closing ) {
         ret = UVHTTP_ERROR_WRITE_WAIT;
         goto cleanup;
     }
@@ -415,7 +419,9 @@ void uvhttp_ssl_session_close(
     ssl->is_closing = 1;
     ((struct uvhttp_ssl_session*)handle)->user_close_cb = close_cb;
     if ( MBEDTLS_ERR_SSL_WANT_READ != ret && MBEDTLS_ERR_SSL_WANT_WRITE != ret ) {
-        uv_close( handle, uvhttp_ssl_session_close_cb);
+        if ( uv_is_closing( (uv_handle_t*)ssl) == 0) {
+            uv_close( handle, uvhttp_ssl_session_close_cb);
+        }
     }
 }
 
@@ -438,5 +444,7 @@ void uvhttp_ssl_server_close(
     )
 {
     ((struct uvhttp_ssl_server*)handle)->user_close_cb = close_cb;
-    uv_close( handle, uvhttp_ssl_server_close_cb);
+    if ( uv_is_closing( handle) == 0) {
+        uv_close( handle, uvhttp_ssl_server_close_cb);
+    }
 }

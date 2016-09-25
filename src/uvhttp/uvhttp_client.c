@@ -17,7 +17,62 @@ static void client_error(
 struct uvhttp_client_obj* client_obj
     );
 
+static int uvhttp_write(
+    uv_write_t* req,
+    uv_stream_t* handle,
+    char* buffer,
+    unsigned int buffer_len,
+    uv_write_cb cb
+    )
+{
+    uv_buf_t buf;
+    buf.base = buffer;
+    buf.len = buffer_len;
+    return uv_write( req, handle, &buf, 1, cb);
+}
 
+static void client_write_callback(
+    uv_write_t* req,
+    int status
+    )
+{
+    struct uvhttp_client_write_request* write_req = (struct uvhttp_client_write_request*)req;
+    write_req->write_callback( status, write_req->client, write_req->user_data );
+    free( req);
+}
+
+int uvhttp_client_write(
+    uvhttp_client client,
+struct uvhttp_chunk* buffer,
+    void* user_data,
+    uvhttp_client_write_callback write_callback 
+    )
+{
+    int ret = UVHTTP_OK;
+    struct uvhttp_client_obj* client_obj = (struct uvhttp_client_obj*)client;
+    struct uvhttp_client_write_request* write_req = 0;
+    if ( uv_is_writable( (uv_stream_t*)client_obj->tcp) == 0) {
+        return UVHTTP_ERROR_FAILED;
+    }
+    write_req = (struct uvhttp_client_write_request*)malloc( sizeof(struct uvhttp_client_write_request));
+    memset( write_req, 0, sizeof(struct uvhttp_client_write_request));
+    write_req->user_data = user_data;
+    write_req->client = client;
+    write_req->write_callback = write_callback;
+    if( !client_obj->ssl ) {
+        ret = uvhttp_write( &write_req->write_req, (uv_stream_t*)client_obj->tcp, buffer->base, buffer->len, client_write_callback);
+        if ( ret != UVHTTP_OK) {
+            free( write_req);
+        }
+    }
+    else {
+        ret = uvhttp_ssl_client_write( &write_req->write_req, (uv_stream_t*)client_obj->tcp, buffer->base, buffer->len, client_write_callback);
+        if ( ret != UVHTTP_OK) {
+            free( write_req);
+        }
+    }
+    return ret;
+}
 
 static int http_parser_on_client_message_begin(
     http_parser* parser
@@ -326,14 +381,21 @@ struct uvhttp_client_obj* client_obj
     uv_buf_t req_buf;
     client_obj->status = UVHTTP_CLIENT_STATUS_REQUESTING;
 
-    if ( client_obj->ssl) {
+    write_req = (uv_write_t*)malloc( sizeof(uv_write_t));
+    write_req->data = client_obj;
+    req_buf = uv_buf_init( client_obj->request_buffer.base, client_obj->request_buffer.len);
+
+    if( client_obj->ssl ) {
+        ret = uvhttp_ssl_client_write( write_req, (uv_stream_t*)client_obj->tcp, client_obj->request_buffer.base, 
+            client_obj->request_buffer.len, request_written);
+        if ( ret != UVHTTP_OK) {
+            goto cleanup;
+        }
     }
     else {
-        write_req = (uv_write_t*)malloc( sizeof(uv_write_t));
-        write_req->data = client_obj;
-        req_buf = uv_buf_init( client_obj->request_buffer.base, client_obj->request_buffer.len);
-        ret = uv_write( write_req, (uv_stream_t*)client_obj->tcp, &req_buf, 1, request_written);
-        if ( ret != 0) {
+        ret = uvhttp_write( write_req, (uv_stream_t*)client_obj->tcp, client_obj->request_buffer.base, 
+            client_obj->request_buffer.len, request_written);
+        if ( ret != UVHTTP_OK) {
             goto cleanup;
         }
     }
@@ -421,9 +483,16 @@ static int client_start_read( struct uvhttp_client_obj* client_obj )
 {
     int ret = 0;
     http_parser_init( &client_obj->parser, HTTP_RESPONSE);
-    ret = uv_read_start((uv_stream_t*)client_obj->tcp, client_data_alloc, client_data_read);
-    if ( ret == UV_EALREADY) {
-        ret = 0;
+    if ( client_obj->ssl ) {
+        ret = uvhttp_ssl_read_client_start((uv_stream_t*)client_obj->tcp, client_data_alloc, client_data_read);
+        if ( ret != 0)
+            goto cleanup;
+    }
+    else {
+        ret = uv_read_start((uv_stream_t*)client_obj->tcp, client_data_alloc, client_data_read);
+        if ( ret == UV_EALREADY) {
+            ret = 0;
+        }
     }
     if ( ret != 0 ) {
         goto cleanup;
@@ -463,7 +532,7 @@ cleanup:
 static void client_getaddrinfo(
     uv_getaddrinfo_t* req,
     int status,
-    struct addrinfo* res
+struct addrinfo* res
     )
 {
     int ret = 0;
@@ -481,7 +550,7 @@ static void client_getaddrinfo(
     connect_req = (uv_connect_t*)malloc(sizeof(uv_connect_t));
     connect_req->data = client_obj;
     if ( client_obj->ssl) {
-		uvhttp_ssl_client_connect( connect_req, client_obj->tcp, res->ai_addr, client_connected);
+        uvhttp_ssl_client_connect( connect_req, client_obj->tcp, res->ai_addr, client_connected);
     }
     else {
         ret = uv_tcp_connect( connect_req, client_obj->tcp, res->ai_addr, client_connected);
@@ -643,7 +712,7 @@ cleanup:
 }
 
 static void client_reset( 
-struct uvhttp_client_obj* client_obj
+    struct uvhttp_client_obj* client_obj
     )
 {
     struct uvhttp_header* list = client_obj->response.headers;
@@ -684,7 +753,7 @@ struct uvhttp_client_obj* client_obj
 }
 
 static void client_delete( 
-struct uvhttp_client_obj* client_obj
+    struct uvhttp_client_obj* client_obj
     )
 {
     client_reset( client_obj);
@@ -693,7 +762,7 @@ struct uvhttp_client_obj* client_obj
 }
 
 static void client_error(
-struct uvhttp_client_obj* client_obj
+    struct uvhttp_client_obj* client_obj
     )
 {
     if ( client_obj->response_finished == 0 && client_obj->end_callback) {
@@ -843,62 +912,5 @@ int uvhttp_client_get_info(
         break;
     }
     va_end(ap);
-    return ret;
-}
-
-static void client_write_callback(
-    uv_write_t* req,
-    int status
-    )
-{
-    struct uvhttp_client_write_request* write_req = (struct uvhttp_client_write_request*)req;
-    write_req->write_callback( status, write_req->client, write_req->user_data );
-    free( req);
-}
-
-static int uvhttp_write(
-    uv_write_t* req,
-    uv_stream_t* handle,
-    char* buffer,
-    unsigned int buffer_len,
-    uv_write_cb cb
-    )
-{
-    uv_buf_t buf;
-    buf.base = buffer;
-    buf.len = buffer_len;
-    return uv_write( req, handle, &buf, 1, cb);
-}
-
-int uvhttp_client_write(
-    uvhttp_client client,
-    struct uvhttp_chunk* buffer,
-    void* user_data,
-    uvhttp_client_write_callback write_callback 
-    )
-{
-    int ret = UVHTTP_OK;
-    struct uvhttp_client_obj* client_obj = (struct uvhttp_client_obj*)client;
-    struct uvhttp_client_write_request* write_req = 0;
-    if ( uv_is_writable( (uv_stream_t*)client_obj->tcp) == 0) {
-        return UVHTTP_ERROR_FAILED;
-    }
-    write_req = (struct uvhttp_client_write_request*)malloc( sizeof(struct uvhttp_client_write_request));
-    memset( write_req, 0, sizeof(struct uvhttp_client_write_request));
-    write_req->user_data = user_data;
-    write_req->client = client;
-    write_req->write_callback = write_callback;
-    if( !client_obj->ssl ) {
-        ret = uvhttp_write( &write_req->write_req, (uv_stream_t*)client_obj->tcp, buffer->base, buffer->len, client_write_callback);
-        if ( ret != UVHTTP_OK) {
-            free( write_req);
-        }
-    }
-    else {
-//         ret = uvhttp_ssl_session_write( &write_req->write_req, (uv_stream_t*)session_obj->tcp, buffer->base, buffer->len, session_write_callback);
-//         if ( ret != UVHTTP_OK) {
-//             free( write_req);
-//         }
-    }
     return ret;
 }
