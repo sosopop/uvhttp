@@ -3,18 +3,19 @@ UVHttp is an asynchronous HTTP framework written in C. The goal of uvhttp is to 
 
 UVHttp will teaching you how to create a simple http server and http client, before this I was very difficult to find a support c language, HTTPS, asynchronous framework of the HTTP server and the client's open source code, so I try to learn and develop the UVHttp, I hope to help you.
 
-##Features
+## Features
 Cross platform<br>
 HTTP keep-alive<br>
 Non-blocking I/O<br>
 HTTPS<br>
 Server and client<br>
 
-##Contact
+## Contact
 QQ:12178761<br>
 Email:12178761@qq.com<br>
+如果您感觉对您有所帮助，please press star
 
-##Sample
+## Sample
 ```c
 static void uvhttp_session_request(
     uvhttp_session session,
